@@ -1,0 +1,139 @@
+{
+  "id": "zod-upgrade-demo-v1",
+  "mode": "pre-event",
+  "event": "2026-daytona-hacksprint-seoul-oct18",
+  "status": "EXPECTED_FROZEN_PRODUCT_NOT_RUN",
+  "oracle": {
+    "path": "demo-oracle-v1.json",
+    "sha256_canonical_json": "2411601721e5b0f1829a77a1405efa625df899945d22980389b88a2ee5a25a00",
+    "canonicalization": "UTF-8 json.dumps(sort_keys=True,separators=(comma,colon),ensure_ascii=False), no newline"
+  },
+  "sources": [
+    "demo-scenario-selection.md",
+    "design.md",
+    "https://zod.dev/v4/changelog#improves-enum-support"
+  ],
+  "start_conditions": {
+    "synthetic_fixture": true,
+    "repo": null,
+    "base_sha": null,
+    "upgrade_sha": null,
+    "patch_sha": null,
+    "lockfiles": null,
+    "runner": "Node runtime schema validation; no TypeScript compile claim",
+    "runtime_requirement": "record exact Node/npm versions on each run",
+    "immutable_files": [
+      "oracle",
+      "evaluator",
+      "test cases"
+    ],
+    "allow_patch": [
+      "application schema source"
+    ],
+    "prohibited": [
+      "changing expected/tests/evaluator",
+      "downgrading Zod",
+      "turning validation off",
+      "auto merge",
+      "production deploy",
+      "real customer data",
+      "secrets in artifacts"
+    ]
+  },
+  "scenario": {
+    "name": "Optional settings contract survives dependency upgrade",
+    "action": "User selects supported synthetic Zod fixture, confirms versions and requirement, starts upgrade verification, reviews generated source patch and same-input recheck.",
+    "claims": [
+      "detect runtime behavior regression",
+      "generate source-linked patch",
+      "preserve the fixed contract on specified inputs",
+      "provide reproducible evidence"
+    ]
+  },
+  "surfaces": {
+    "web_result": {
+      "expect": [
+        "baseline/upgraded/patched per-case actual and explicit environment",
+        "regression inputs distinguished from controls",
+        "patch and official reason",
+        "scope and actual generation mode",
+        "infra/model/unverified not shown as success"
+      ],
+      "status": "NOT_RUN",
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    "patch_artifact": {
+      "expect": [
+        "source-only patch on head SHA",
+        "fixed versions retained",
+        "immutable oracle and evaluator unchanged",
+        "same inputs evaluated after applying patch"
+      ],
+      "status": "NOT_RUN",
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    "evidence_artifact": {
+      "expect": [
+        "exact SHAs/versions/lockfile hashes",
+        "model/provider when actually used",
+        "environment local or Daytona",
+        "commands, exit codes and actual errors",
+        "oracle hash and case-by-case results",
+        "no secrets"
+      ],
+      "status": "NOT_RUN",
+      "actual": null,
+      "verdict": "NOT_RUN"
+    }
+  },
+  "guard_scenarios": [
+    {
+      "name": "Installation or execution unavailable",
+      "expected": "INFRA ERROR; no success badge; preserve actual error; distinguish from assertion failure",
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "name": "Model changes oracle/test/evaluator or returns invalid patch",
+      "expected": "MODEL ERROR or explicit patch rejection; refuse success; preserve original bytes",
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "name": "Missing independent requirement",
+      "expected": "UNVERIFIED; do not substitute model guess or observed output for expected",
+      "actual": null,
+      "verdict": "NOT_RUN"
+    }
+  ],
+  "verdict_rules": {
+    "PASS": "All fixed expectations and invariants satisfied with genuine generated-patch execution and complete per-surface evidence. Automatic patch claim requires actual model generation; Daytona claim requires actual sponsor execution.",
+    "PRODUCT FAIL": "Oracle valid and infra/model normal but behavior, patch, or presentation violates expected.",
+    "MODEL ERROR": "Invalid generation prevents valid evaluation, including unauthorized patch scope.",
+    "INFRA ERROR": "Environment/setup/network/quota/runner error prevents valid execution.",
+    "ORACLE INVALID / UNVERIFIED": "Independent oracle is invalid or missing; not a detected regression.",
+    "NOT_RUN": "No actual product run; never count as PASS."
+  },
+  "historical_reference": {
+    "path": "evidence/zod-upgrade-local.json",
+    "scope": "Prior local manual schema comparison; no AI, PR or Daytona execution.",
+    "product_pass": false
+  },
+  "rerun": {
+    "product_command": null,
+    "state": "Product not implemented. Bind source SHAs and lockfile hashes before first product run, without changing the oracle.",
+    "historical_spike": "Scratch fixture npm run verify is feasibility reproduction only, not this product contract execution."
+  },
+  "excluded": [
+    "automatic merge/deployment",
+    "broad package compatibility",
+    "TypeScript compile success",
+    "timing/performance claims",
+    "Nosana/Daytona use without actual integration evidence",
+    "static mockup as live product evidence"
+  ],
+  "fallback": "Show historical local evidence or replay only with LOCAL / MANUAL / RECORDED labels; never present as live AI/sponsor PASS.",
+  "freeze_policy": "Do not modify expected to fit later output. If oracle invalid, retain old version/reason and isolate this scenario; no PASS resurrection in this event."
+}

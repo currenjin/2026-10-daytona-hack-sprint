@@ -1,0 +1,16 @@
+{
+  "name": "package-upgrade-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "verify": "node scripts/verify-contract.mjs"
+  },
+  "dependencies": {
+    "@daytona/sdk": "0.224.0",
+    "zod3": "npm:zod@3.25.76",
+    "zod4": "npm:zod@4.1.12"
+  }
+}

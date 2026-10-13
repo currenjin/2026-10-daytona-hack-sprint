@@ -1,0 +1,8 @@
+node_modules/
+.runs/
+.env
+.env.*
+!.env.example
+scripts/verify-evidence.json
+*.log
+.DS_Store
