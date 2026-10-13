@@ -8,7 +8,8 @@
 
 - [준비 상태와 현장 연결 계획](docs/PREPARATION.md)
 - [실제 로컬 결과 화면](docs/screenshots/result.png) · [모바일 화면](docs/screenshots/mobile.png)
-- 발표 슬라이드·대본·제출 문구는 아직 작성하지 않았습니다. 실제 모델/Daytona 결과는 현장 검증 후 반영합니다.
+- 한·영 슬라이드와 한국어 대본, guide의 행사 전 초안은 hackathon-kit에 있습니다. 제출 문구는 아직 작성하지 않았으며 실제 모델/Daytona 결과는 현장 검증 후 반영합니다.
+- [패치 형식 보강과 최신 검증](docs/PATCH_FORMATTING.md)
 
 ## 현재 지원
 
@@ -43,7 +44,7 @@ contracts/demo-oracle-v1.json은 승인된 외부 계약의 복사본이고 cano
 
 ## 검증 결과
 
-현재 정확한 테스트 수와 부모가 실제 재실행한 범위는 adapter-parent-verification.md 및 kit의 evidence/adapters-verification-receipt.json에 있습니다. Backend 70/70, UI 11/11이며 합계 81개가 통과했습니다. 실제 Chrome에서 10/10 → 6/10 → 10/10, 중복 시작 방지, patch/evidence 다운로드, 초기화 후 새 실행과 390px 가로 overflow 없음, pageerror 없음 확인. 준비되지 않은 외부 설정은 실제 loopback 서버로 CONFIG_ERROR, 시작 버튼 비활성과 runner 호출 0을 확인했습니다.
+현재 정확한 테스트 수와 부모가 실제 재실행한 범위는 docs/PATCH_FORMATTING.md 및 kit의 evidence/pre-event-final-tests.json에 있습니다. Backend 152/152, UI 11/11이며 합계 163개가 통과했습니다. 실제 Chrome에서 10/10 → 6/10 → 10/10, 중복 시작 방지, patch/evidence 다운로드, 초기화 후 새 실행과 390px 가로 overflow 없음, pageerror 없음 확인. 준비되지 않은 외부 설정은 실제 loopback 서버로 CONFIG_ERROR, 시작 버튼 비활성과 runner 호출 0을 확인했습니다.
 
 TDD RED/GREEN 내역은 backend-verification.md 참조. 기존 수동 spike와 이번 자동 로컬 rule 실행은 서로 다른 증거입니다. 테스트 통과가 실제 모델 품질이나 sponsor 연결 성공을 뜻하지 않습니다.
 

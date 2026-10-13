@@ -37,7 +37,7 @@ test('source injection is rejected at generation boundary', () => {
   assert.throws(() => proposePatch(source + 'process.exit(0);'), {code: 'PATCH_REJECTED'});
 });
 test('patch allowlist rejects downgrade, validation bypass, and unrelated edits', () => {
-  for (const invalid of [source, patched + '// changed tests', patched.replace('z.boolean()', 'z.any()'), patched.replace('push', 'sms')]) {
+  for (const invalid of [source, patched + 'process.exit(0);', patched.replace('z.boolean()', 'z.any()'), patched.replace('push', 'sms')]) {
     assert.throws(() => validatePatch(source, invalid), {code: 'PATCH_REJECTED'});
   }
 });

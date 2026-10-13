@@ -7,7 +7,7 @@
 - 합성 설정 스키마 fixture 하나, Zod 3.25.76 → 4.1.12.
 - 고정 계약의 10개 입력을 기존/업그레이드/패치 상태에서 실제 Node 프로세스로 실행.
 - 로컬 규칙 기반 patch와 동일 기준 재검증. LOCAL_VERIFIED는 실제 AI 생성이나 sponsor 실행이 아니다.
-- Backend 70개 + UI 11개 테스트 통과. 실제 Chrome에서 시작/다운로드/reset 후 두 번 연속 10/10 → 6/10 → 10/10 확인.
+- Backend 152개 + UI 11개, 총 163개 테스트 통과. 실제 Chrome에서 시작/다운로드/reset 후 두 번 연속 10/10 → 6/10 → 10/10 확인.
 - 승인된 검정·라임 UI를 구현. docs/screenshots는 실제 local 실행 화면이다.
 - OpenAI-compatible patch generation 및 Daytona SDK 0.224.0 adapter 구현과 credential-free 계약 검증 완료. transport double과 진짜 provider 성공을 구분.
 - 실제 모델 요청, Daytona sandbox 생성, Nosana 호출, 공개 배포는 하지 않았다.
@@ -33,12 +33,12 @@
 
 ## 미검증과 위험
 
-- 실제 모델 품질 및 반환 형식. 현재 source allowlist는 정해진 한 줄 전환을 엄격히 검사하므로 의미가 같아도 formatting 차이로 거절할 수 있다.
+- 실제 모델 품질 및 반환 형식. 일반 formatting 차이는 보강했지만 정해진 호출 구조 밖의 표현은 여전히 보수적으로 거절한다. 상세 검증: docs/PATCH_FORMATTING.md.
 - 실서비스 인증, network/registry 접근, credit/quota, 실제 cleanup readback.
 - 일반 GitHub PR 입력, 임의 package/repository migration, 제품 TypeScript compile, 범용 안전성은 지원/검증하지 않는다.
 - 스폰서 전체 통합은 필수로 기록했지만 개별 Daytona/Nosana 모두 필수인지 및 Nosana 채택은 미확정.
 - 사전 제작 규칙, 공식 submission form/deadline 및 공개 링크 요구는 미확인. 빌드 종료 시각을 제출 마감으로 간주하지 않는다.
-- 발표 슬라이드/대본/제출 문구는 아직 작성되지 않았다. local 결과를 실제 AI/sponsor 사용으로 확대하지 않는다.
+- 발표 슬라이드/대본/guide의 행사 전 초안은 hackathon-kit에 보존한다. 제출 문구는 아직 미작성이다. local 결과를 실제 AI/sponsor 사용으로 확대하지 않는다.
 
 ## 원본 준비 기록
 
