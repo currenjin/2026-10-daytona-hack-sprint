@@ -1,6 +1,6 @@
 # 행사 전 준비 상태
 
-행사: Daytona HackSprint Seoul, 2026-10-18 (Asia/Seoul). 제품: 패키지 업그레이드 실험실 (가칭).
+행사: Daytona HackSprint Seoul, 2026-10-18 (Asia/Seoul). 제품: Bumpbench (범프벤치).
 
 ## 현재 확인한 범위
 
