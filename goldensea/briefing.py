@@ -31,7 +31,7 @@ def summarise(results: list[dict]) -> dict:
         return {"status": "NOT_CONFIGURED", "reason": why}
     names = {"S5": "15분 일찍 빠졌다면", "S0": "신고 시각", "S2": "15분 늦게 빠졌다면", "S1": "신고 위치 1 km 반경"}
     facts = [{"scenario": names.get(r.get("scenario", {}).get("id"), r.get("scenario", {}).get("id")),
-              "evaluations": [{"at": e["at"], "top_cell_fraction": e["top_cell_fraction"],
+              "evaluations": [{"at": e["at"][11:16] + " KST", "top_cell_fraction": e["top_cell_fraction"],
                                "unresolved_fraction": e["unresolved_fraction"]} for e in r.get("evaluations", [])]}
              for r in results if r.get("evaluations")]
     body = {"model": os.environ.get("NOSANA_LLM_MODEL", "default"),
