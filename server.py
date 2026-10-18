@@ -24,7 +24,7 @@ from pathlib import Path
 from goldensea import briefing
 from goldensea.executors import EXECUTORS, daytona_available
 from goldensea.forcing import DataError, SetupBlocked, build_forcing, load_entry
-from goldensea.scenarios import (DISCLOSURES, EARLIEST, EVAL_END, INCIDENT_LAT, INCIDENT_LON, SCENARIOS,
+from goldensea.scenarios import (DISCLOSURES, EARLIEST, EVAL_END, INCIDENT_LAT, INCIDENT_LON, INCIDENTS, SCENARIOS,
                                  UNITS, InputError, validate, validate_support)
 
 ROOT = Path(__file__).resolve().parent
@@ -58,9 +58,9 @@ def support_check() -> None:
     validate_support(EARLIEST, EVAL_END, build_forcing(marine, None, epoch).support, epoch)
 
 
-def start_batch(scenarios: list[str], executor: str, source: str) -> str:
+def start_batch(scenarios: list[str], executor: str, source: str, incident: str = "A") -> str:
     bid = uuid.uuid4().hex[:10]
-    batch = {"id": bid, "executor": executor, "source": source, "created": time.time(),
+    batch = {"id": bid, "executor": executor, "source": source, "incident": incident, "created": time.time(),
              "items": {s: {"phase": "queued", "info": {}} for s in scenarios}, "results": {}}
     with LOCK:
         BATCHES[bid] = batch
@@ -73,7 +73,7 @@ def start_batch(scenarios: list[str], executor: str, source: str) -> str:
             with LOCK:
                 batch["items"][sid] = {"phase": name, "info": info, "since": round(time.perf_counter() - t, 2)}
         try:
-            res = run(sid, CACHE, CONTRACTS, source, phase)
+            res = run(sid, CACHE, CONTRACTS, source, phase, incident)
         except Exception as e:
             res = {"status": "INFRA_ERROR", "error": str(e)[:500], "scenario": {"id": sid}, "executor": executor}
         res["wall_s"] = round(time.perf_counter() - t, 3)
@@ -149,12 +149,15 @@ class Handler(SimpleHTTPRequestHandler):
             scen = body.get("scenarios") or ["S0", "S1", "S2"]
             ex = body.get("executor", "local")
             src = body.get("source", "cache")
+            inc = body.get("incident", "A")
+            if inc not in INCIDENTS:
+                return self._json({"status": "INPUT_ERROR", "error": "unknown incident", "new_run": False}, 400)
             if any(s not in SCENARIOS for s in scen) or ex not in EXECUTORS or src not in ("cache", "synthetic"):
                 return self._json({"status": "INPUT_ERROR", "error": "unknown scenario/executor/source"}, 400)
             try:
                 for s in scen:
                     sc = SCENARIOS[s]
-                    validate(INCIDENT_LAT, INCIDENT_LON, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
+                    validate(INCIDENTS[inc]["lat"], INCIDENTS[inc]["lon"], sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
                 if src == "cache":
                     support_check()
             except InputError as e:
@@ -164,7 +167,7 @@ class Handler(SimpleHTTPRequestHandler):
                                    "error": str(e), "new_run": False}, 409)
             if ex == "daytona" and not daytona_available()[0]:
                 return self._json({"status": "SETUP_BLOCKED", "error": daytona_available()[1]}, 409)
-            return self._json({"batch_id": start_batch(scen, ex, src)})
+            return self._json({"batch_id": start_batch(scen, ex, src, inc)})
         if self.path.startswith("/api/brief/"):
             bid = self.path.rsplit("/", 1)[-1]
             with LOCK:

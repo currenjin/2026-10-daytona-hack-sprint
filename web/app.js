@@ -3,14 +3,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const COLORS = { S0: 0x26e0c6, S1: 0xe9f3f2, S2: 0x7b74ff };
 const CSS_COLORS = { S0: '#26e0c6', S1: '#e9f3f2', S2: '#7b74ff' };
-const LABELS = { S0: '신고 시점', S1: '신고 기준 1 km 반경', S2: '신고 ~12:30' };
+const LABELS = { S0: '신고 시점', S1: '신고 기준 1 km 반경', S2: '빠진 시각 12:30까지' };
 const R = 6371000, LAT0 = 35.1, LON0 = 129.3, COS = Math.cos(LAT0 * Math.PI / 180);
 const toX = lon => (lon - LON0) * Math.PI / 180 * R * COS / 1000;   // km east
 const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -north
 const EXAG = 4;                                                      // terrain height exaggeration
 const $ = s => document.querySelector(s);
 
-const state = { results: {}, rows: {}, focus: null, frame: 0, playing: false, evalIdx: 0, config: null, executor: 'local', source: 'cache', view: '3d' };
+const INC = { A: { lat: 35.1, lon: 129.3 }, B: { lat: 35.0, lon: 129.2 }, C: { lat: 35.2, lon: 129.3 } };
+const off = { x: 0, z: 0 };
+const state = { incident: 'A', results: {}, rows: {}, focus: null, frame: 0, playing: false, evalIdx: 0, config: null, executor: 'local', source: 'cache', view: '3d' };
 
 // ---------- three.js scene ----------
 const stage = $('#stage');
@@ -152,7 +154,7 @@ function updateCells() {
     const box = cellBoxes[sid];
     if (!e || !e.top_cell || e.state_counts.ACTIVE === 0) { box.visible = false; continue; }
     const [i, j] = e.top_cell.split(',').map(Number);
-    box.position.x = i; box.position.z = -j; box.visible = true;
+    box.position.x = i + off.x; box.position.z = -j + off.z; box.visible = true;
   }
 }
 
@@ -224,8 +226,9 @@ function resize() {
   renderer.setSize(innerWidth, innerHeight);
   persp.aspect = innerWidth / innerHeight;
   // lift the scene so the drift sits above the result card
-  const lift = innerWidth > 900 ? Math.round(innerHeight * (CAM.length === 6 ? CAM[5] : 0.2)) : 0;
-  persp.setViewOffset(innerWidth, innerHeight, 0, lift, innerWidth, innerHeight); persp.updateProjectionMatrix();
+  // keep the drift in the open area left of the side panels
+  const shiftX = 0;
+  persp.setViewOffset(innerWidth, innerHeight, shiftX, 0, innerWidth, innerHeight); persp.updateProjectionMatrix();
   const half = 7.3, asp = innerWidth / innerHeight;
   const sh = 0;
   Object.assign(ortho, { left: -half * asp, right: half * asp, top: half + sh, bottom: -half + sh }); ortho.updateProjectionMatrix();
@@ -246,7 +249,7 @@ function followTarget(f) {
   if (!n) return;
   // keep the incident pin in view while the cloud is near it
   const cx = sx / n / 1000, cy = sz / n / 1000;
-  follow.set(cx, 0, -cy + 0.3);
+  follow.set(cx + off.x, 0, -cy + 0.3 + off.z);
 }
 function tick(now) {
   const dt = (now - last) / 1000; last = now;
@@ -257,7 +260,7 @@ function tick(now) {
   }
   const ring = pin.getObjectByName('ring'); const s = 1 + (now / 1000 % 1.6) * 0.8; ring.scale.set(s, s, s); ring.material.opacity = 0.6 * (1 - (now / 1000 % 1.6) / 1.6);
   if (Object.keys(state.results).length) {
-    if (camMode === 'follow') followTarget(state.frame); else follow.set(0, 0, 0.3);
+    if (camMode === 'follow') followTarget(state.frame); else follow.set(off.x, 0, off.z + 0.3);
     _d.copy(follow).sub(controls.target).multiplyScalar(0.12);
     controls.target.add(_d); persp.position.add(_d);
     ortho.position.x += (follow.x - ortho.position.x) * 0.12; ortho.position.z += (follow.z + 2.6 - ortho.position.z) * 0.12;
@@ -298,13 +301,15 @@ renderer.domElement.addEventListener('pointerup', e => {
 });
 const cellCenter = key => {
   const [i, j] = key.split(',').map(Number);
-  const lat = LAT0 + (j + 0.5) * 1000 / R * 180 / Math.PI, lon = LON0 + (i + 0.5) * 1000 / (R * COS) * 180 / Math.PI;
+  const c = INC[state.incident], cs = Math.cos(c.lat * Math.PI / 180);
+  const lat = c.lat + (j + 0.5) * 1000 / R * 180 / Math.PI, lon = c.lon + (i + 0.5) * 1000 / (R * cs) * 180 / Math.PI;
   return `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
 };
 function shareText() {
   const at = ['13:00', '15:00', '18:00'], L = [];
   L.push('[Golden Sea 상황 공유 · 시연용 가상 사고]');
-  L.push('신고 12:16 · 낚싯배 승선자 1명 추락 · 35.1000° N, 129.3000° E (해운대 남동쪽 약 14 km) · 12:00~12:15 추정');
+  const rr = REPORTS.find(x => x.inc === state.incident);
+  L.push(`신고 ${rr.when} · ${rr.what} · ${rr.pos} (${rr.ref}) · ${rr.time} 추정`);
   L.push('');
   for (let ei = 0; ei < 3; ei++) {
     L.push(`${at[ei]} KST 표류 경로 경우의 수가 가장 많이 모인 1 km 칸`);
@@ -406,7 +411,7 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   $('#runbtn').disabled = true; $('#runpanel').classList.add('busy');
   $('#intro').classList.add('running');
   $('#intro-run').textContent = state.executor === 'daytona' ? 'Daytona sandbox 3개 동시 계산 중…' : '로컬 계산 중… (스폰서 실행 아님)';
-  const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source }) });
+  const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source, incident: state.incident }) });
   const j = await res.json();
   if (!j.batch_id) { $('#runpanel').classList.remove('busy'); $('#intro').classList.remove('running'); banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
   banner(null);
@@ -448,27 +453,39 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
 $('#runbtn').onclick = () => run();
 $('#intro-run').onclick = () => run();
 const REPORTS = [
-  { when: '12:16', who: '선장 · 무선', what: '승선자 1명이 바다에 빠짐', pos: '35.1000° N, 129.3000° E (V-PASS 선박 위치)', err: '반경 250 m', time: '12:00 ~ 12:15', w: 0, note: '신고 1' },
-  { when: '12:22', who: '동승자 · 휴대폰 122', what: '배가 움직여서 빠진 위치를 정확히 모름', pos: '같은 해역 (해운대 남동쪽 약 14 km)', err: '반경 1 km', time: '12:00 ~ 12:15', w: 1, note: '신고 2' },
-  { when: '12:31', who: '인근 어선 · 목격', what: '12시 반 가까이 물 위에 사람이 보였음', pos: '같은 해역', err: '반경 250 m', time: '12:00 ~ 12:30', w: 2, note: '신고 3' },
+  { inc: 'A', when: '12:16', who: '선장 · 무선', what: '낚싯배 승선자 1명이 바다에 빠짐', pos: '35.1000° N, 129.3000° E', ref: '해운대 남동쪽 약 14 km', time: '12:00 ~ 12:15', err: '반경 250 m' },
+  { inc: 'B', when: '12:18', who: '선원 · 휴대폰 122', what: '화물선 선원 1명이 갑판에서 보이지 않음', pos: '35.0000° N, 129.2000° E', ref: '오륙도 남남동쪽 약 12 km', time: '12:00 ~ 12:15', err: '반경 250 m' },
+  { inc: 'C', when: '12:20', who: '레저보트 · 무선', what: '레저보트 동승자 1명이 파도에 휩쓸림', pos: '35.2000° N, 129.3000° E', ref: '기장 남동쪽 약 9 km', time: '12:00 ~ 12:15', err: '반경 250 m' },
 ];
 let rIdx = 0;
+function setIncident(id) {
+  state.incident = id; const c = INC[id];
+  off.x = toX(c.lon); off.z = toZ(c.lat);
+  pin.position.set(off.x, 0, off.z);
+  PLACES[4][1] = c.lat; PLACES[4][2] = c.lon + 0.0075;
+  for (const o of [...Object.values(clouds), exits, heat, ...Object.values(trails)]) o.position.set(off.x, 0, off.z);
+  state.results = {}; state.rows = {}; state.focus = null;
+  for (const sid of ['S0', 'S1', 'S2']) { cellBoxes[sid].visible = false; delete centroids[sid]; }
+  follow.set(off.x + 1.5, 0, off.z - 1.5);
+  renderRows(null); renderCard(); setFrame(0);
+}
 $('#intro-fill').onclick = async () => {
   const r = REPORTS[rIdx % REPORTS.length], btn = $('#intro-fill');
-  btn.disabled = true;
-  $('#r-tag').textContent = `가상 신고 ${rIdx % REPORTS.length + 1} · ${r.when} 접수`;
-  for (const [sel, val] of [['#f-when', r.when], ['#f-who', r.who], ['#f-what', r.what], ['#f-pos', r.pos], ['#f-err', r.err], ['#f-time', r.time]]) {
+  btn.disabled = true; setIncident(r.inc);
+  $('#r-tag').textContent = `가상 신고 · ${r.when} 접수`;
+  $('#cur-what').textContent = `${r.when} · ${r.what}`;
+  $('#cur-meta').textContent = `${r.ref} · ${r.time}`;
+  for (const [sel, val] of [['#f-when', r.when], ['#f-who', r.who], ['#f-what', r.what], ['#f-pos', `${r.pos} (${r.ref})`], ['#f-err', r.err], ['#f-time', r.time]]) {
     const el = $(sel); el.classList.remove('filled');
-    for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(res => setTimeout(res, 14)); }
+    for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(res => setTimeout(res, 12)); }
     el.classList.add('filled');
   }
-  $('#cur-what').textContent = `신고 ${rIdx % REPORTS.length + 1} · ${r.when} · ${r.what}`;
-  $('#cur-meta').textContent = `${r.pos} · ${r.time} · ${r.err}`;
-  const li = document.querySelector(`#worlds li[data-w="${r.w}"]`); li.classList.add('on'); li.querySelector('span').textContent = r.note;
+  document.querySelectorAll('#worlds li').forEach(li => li.classList.add('on'));
+  $('#unverified').hidden = r.inc === 'A';
   rIdx++;
-  $('#intro-run').disabled = false;
-  btn.disabled = false;
+  $('#intro-run').disabled = false; btn.disabled = false;
 };
+$('#newreport').onclick = () => { $('#intro').hidden = false; $('#intro').classList.remove('running'); document.body.classList.remove('started'); $('#intro-run').textContent = '추정 위치 계산'; $('#intro-fill').click(); };
 $('#executor').onchange = e => { state.executor = e.target.value; note(); };
 function note() {
   const dt = state.config?.executors?.daytona;

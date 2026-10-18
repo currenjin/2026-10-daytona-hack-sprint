@@ -28,13 +28,15 @@ def daytona_available() -> tuple[bool, str]:
     return True, "configured"
 
 
-def run_local(scenario_id: str, cache_dir: Path, contracts: Path, source: str, on_phase=None) -> dict:
+def run_local(scenario_id: str, cache_dir: Path, contracts: Path, source: str, on_phase=None,
+              incident: str = "A") -> dict:
     if on_phase:
         on_phase("running", {})
-    return run_scenario(scenario_id, cache_dir, contracts, "local", source)
+    return run_scenario(scenario_id, cache_dir, contracts, "local", source, incident)
 
 
-def run_daytona(scenario_id: str, cache_dir: Path, contracts: Path, source: str, on_phase=None) -> dict:
+def run_daytona(scenario_id: str, cache_dir: Path, contracts: Path, source: str, on_phase=None,
+                incident: str = "A") -> dict:
     from daytona import Daytona
 
     phase = on_phase or (lambda *_: None)
@@ -61,7 +63,7 @@ def run_daytona(scenario_id: str, cache_dir: Path, contracts: Path, source: str,
         phase("running", {"sandbox_id": sandbox_id})
         t = time.perf_counter()
         cmd = (f"cd gs && python3 -m goldensea.run --scenario {scenario_id} --cache cache "
-               f"--contracts contracts --executor daytona --source {source} --out out.json")
+               f"--contracts contracts --executor daytona --source {source} --incident {incident} --out out.json")
         resp = sandbox.process.exec(cmd, timeout=300)
         timings["exec_s"] = round(time.perf_counter() - t, 3)
         if resp.exit_code != 0:

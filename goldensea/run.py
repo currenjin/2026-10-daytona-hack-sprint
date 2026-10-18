@@ -18,7 +18,7 @@ from pathlib import Path
 from .engine import Box, Particle, Projection, bin_counts, simulate_frames
 from .forcing import DataError, SetupBlocked, build_forcing, load_entry
 from .scenarios import (DOMAIN_LAT, DOMAIN_LON, EARLIEST, EVAL_END, EVAL_TIMES, INCIDENT_LAT,
-                        INCIDENT_LON, SCENARIOS, DISCLOSURES, UNITS, InputError, validate,
+                        INCIDENT_LON, INCIDENTS, SCENARIOS, DISCLOSURES, UNITS, InputError, validate,
                         validate_support)
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -46,18 +46,22 @@ def domain_box(proj: Projection) -> Box:
 
 
 def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: str = "local",
-                 source: str = "cache") -> dict:
+                 source: str = "cache", incident: str = "A") -> dict:
     sc = SCENARIOS[scenario_id]
+    inc = INCIDENTS[incident]
+    lat0, lon0 = inc["lat"], inc["lon"]
     run = {
         "run_id": uuid.uuid4().hex[:12],
         "scenario": sc.echo(),
         "executor": executor,
         "executor_label": "local run (not a sponsor execution)" if executor == "local" else executor,
         "started_at": datetime.now(timezone.utc).isoformat(),
-        "incident": {"lat": INCIDENT_LAT, "lon": INCIDENT_LON,
+        "incident": {"id": incident, "lat": lat0, "lon": lon0, "label": inc["label"],
+                     "in_frozen_criteria": inc["verified"],
                      "earliest_release": EARLIEST.isoformat(), "latest_release": sc.latest_release.isoformat()},
         "quality_flags": ["COASTLINE_UNVERIFIED", "SURFACE_CURRENT_UNVERIFIED"]
-                         + (["WIND_ADAPTER_UNVERIFIED"] if sc.alpha else []),
+                         + (["WIND_ADAPTER_UNVERIFIED"] if sc.alpha else [])
+                         + ([] if inc["verified"] else ["PRESET_NOT_IN_FROZEN_CRITERIA"]),
         "stranding_fraction": None,
         "disclosures": DISCLOSURES,
         "units": UNITS,
@@ -67,7 +71,7 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
     }
     t0 = time.perf_counter()
     try:
-        validate(INCIDENT_LAT, INCIDENT_LON, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
+        validate(lat0, lon0, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
     except InputError as e:
         return {**run, "status": "INPUT_ERROR", "error": str(e)}
     if source == "synthetic":
@@ -75,7 +79,11 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
     try:
         manifest = json.loads((contracts / "cache-manifest.json").read_text())
         entries = {e["file"]: e for e in manifest["entries"]}
-        marine, prov_m = load_entry(cache_dir, entries["openmeteo_marine.json"])
+        m_entry = dict(entries["openmeteo_marine.json"])
+        if incident != "A":
+            m_entry.update(request_list_index_zero_based=inc["cache_index"], requested_lat_lon=[lat0, lon0],
+                           requested_to_returned_eqc_separation_m=None)
+        marine, prov_m = load_entry(cache_dir, m_entry)
         wind, prov_w = (load_entry(cache_dir, entries["openmeteo_wind_gfs_global.json"])
                         if sc.alpha else (None, None))
         latent = load_latent(contracts)
@@ -90,7 +98,7 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
         validate_support(EARLIEST, EVAL_END, forcing.support, EPOCH)
     except InputError as e:
         return {**run, "status": "INPUT_ERROR", "error": str(e)}
-    proj = Projection(INCIDENT_LAT, INCIDENT_LON)
+    proj = Projection(lat0, lon0)
     dom = domain_box(proj)
     return {**run, **simulate(latent, sc, forcing, dom, proj, t0, t_load), "status": "OK",
             "provenance": {"current": prov_m, "wind": prov_w}}
@@ -152,9 +160,10 @@ def main() -> None:
     ap.add_argument("--contracts", default=str(ROOT / "contracts"))
     ap.add_argument("--executor", default="local")
     ap.add_argument("--source", default="cache", choices=["cache", "synthetic"])
+    ap.add_argument("--incident", default="A", choices=sorted(INCIDENTS))
     ap.add_argument("--out")
     a = ap.parse_args()
-    res = run_scenario(a.scenario, Path(a.cache), Path(a.contracts), a.executor, a.source)
+    res = run_scenario(a.scenario, Path(a.cache), Path(a.contracts), a.executor, a.source, a.incident)
     text = json.dumps(res, ensure_ascii=False)
     if a.out:
         Path(a.out).write_text(text)

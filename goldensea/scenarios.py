@@ -19,6 +19,14 @@ LATEST = datetime(2026, 10, 18, 12, 15, tzinfo=KST)
 EVAL_END = datetime(2026, 10, 18, 18, 0, tzinfo=KST)
 EVAL_TIMES = [datetime(2026, 10, 18, h, 0, tzinfo=KST) for h in (13, 15, 18)]
 N_PARTICLES = 2000
+
+# Demo incidents. Only "A" is covered by the frozen criteria; B and C reuse the
+# same cached multi-point forecast at other request indices and are unverified presets.
+INCIDENTS = {
+    "A": {"lat": 35.1, "lon": 129.3, "cache_index": 13, "label": "해운대 남동쪽 약 14 km", "verified": True},
+    "B": {"lat": 35.0, "lon": 129.2, "cache_index": 7, "label": "오륙도 남남동쪽 약 12 km", "verified": False},
+    "C": {"lat": 35.2, "lon": 129.3, "cache_index": 18, "label": "기장 남동쪽 약 9 km", "verified": False},
+}
 SUPPORTED_ALPHA = (0.0, 0.01, 0.03)
 
 
