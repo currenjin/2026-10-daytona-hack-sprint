@@ -50,18 +50,30 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{te
 .tw{overflow-x:auto}
 .banner{position:fixed;left:50%;top:84px;transform:translateX(-50%);max-width:640px;padding:10px 16px;border-radius:12px;font-size:13.5px;background:rgba(46,23,24,.92);border:1px solid rgba(255,138,128,.5);color:#ffd6d2}
 .banner.warn{background:rgba(43,34,19,.92);border-color:rgba(242,184,75,.5);color:#f6e2b8}
-.info{position:fixed;left:20px;bottom:20px;background:var(--panel);border:1px solid var(--line2);color:var(--sub);font:inherit;font-size:13px;border-radius:999px;padding:7px 13px;cursor:pointer}
+.info{align-self:flex-start;background:#0f181c;border:1px solid var(--line2);color:var(--sub);font:inherit;font-size:12px;border-radius:999px;padding:5px 11px;cursor:pointer}
+.clock small{font-size:12px;font-weight:500;color:var(--sub)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:6px;align-items:center}.legend .lg-o{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:6px}
+.legend a{color:var(--teal)}
+#prov{word-break:break-all;line-height:1.5}#prov a{color:var(--teal);font-size:11px}.dlg{max-height:90vh;overflow:auto}
 .info span{color:var(--amber);margin-right:4px}
 .dlg{background:#0b1114;color:var(--text);border:1px solid var(--line2);border-radius:14px;padding:18px 20px;max-width:460px}
 .dlg::backdrop{background:rgba(0,0,0,.6)}.dlg h3{margin:0 0 10px;font-size:15px;color:var(--amber)}
 .dlg ul{margin:0 0 10px;padding-left:18px;font-size:13px;line-height:1.6}.dlg li::marker{color:var(--amber)}
 @media (max-width:900px){
-  .runpanel{top:auto;bottom:auto;right:12px;left:12px;width:auto;position:fixed;top:150px}
-  .card{bottom:12px}.pill{top:auto;bottom:auto}
-  .brand-card{left:12px;top:12px}
-  .pill{top:96px;left:12px;right:12px;transform:none;justify-content:space-between}#scrub{width:100px}
-  .kpis3{grid-template-columns:1fr 1fr 1fr}.k b{font-size:22px}
-  .runpanel{display:none}
+  html,body{font-size:14px}
+  .brand-card{left:12px;right:12px;top:12px;padding:10px 12px;gap:6px}
+  .pill{top:158px;left:12px;right:12px;transform:none;justify-content:space-between;gap:8px;padding:6px 8px 6px 6px}#scrub{width:auto;flex:1;min-width:60px}
+  .clock{font-size:16px;min-width:0}.icon{width:32px;height:32px}
+  .runpanel{top:210px;left:12px;right:12px;width:auto;padding:8px 10px}
+  #runrows{gap:4px;margin-bottom:6px}#runrows li{padding:5px 8px}
+  #rp-note{display:none}#runrows .sb{display:none}#runrows li{font-size:12px}
+  .rp-head span{font-size:11px;text-align:right}.brief{font-size:12px;padding:6px 8px;margin-top:6px}
+  .card{bottom:12px;width:auto;left:12px;right:12px;transform:none;padding:10px 12px;max-height:calc(100% - 412px);overflow:auto}
+  .card h2{font-size:14px;flex-direction:column;gap:2px;margin-bottom:6px}.card h2 small{font-size:11px}
+  .evals{margin-bottom:6px}
+  .kpis3{grid-template-columns:1fr 1fr 1fr;gap:6px}.k{padding:8px}.k .lab{font-size:11px}.k b{font-size:20px}.k .st{font-size:10.5px}
+  .meta{font-size:12px;margin-top:6px}.legend{font-size:11px}
+  .banner{top:auto;bottom:300px;left:12px;right:12px;transform:none}
 }
 
 .brief{margin-top:10px;padding:10px 12px;border-radius:10px;background:#0f181c;border:1px solid var(--line);font-size:13.5px;line-height:1.5}.brief em{display:block;font-style:normal;font-size:11px;color:var(--dim);margin-bottom:4px}

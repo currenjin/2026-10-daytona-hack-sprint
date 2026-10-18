@@ -10,7 +10,7 @@ const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -nort
 const EXAG = 4;                                                      // terrain height exaggeration
 const $ = s => document.querySelector(s);
 
-const state = { results: {}, frame: 0, playing: false, evalIdx: 0, config: null, executor: 'local', source: 'cache', view: '3d' };
+const state = { results: {}, rows: {}, frame: 0, playing: false, evalIdx: 0, config: null, executor: 'local', source: 'cache', view: '3d' };
 
 // ---------- three.js scene ----------
 const stage = $('#stage');
@@ -175,15 +175,21 @@ const pct = v => v == null ? '—' : `${(v * 100).toFixed(1)}%`;
 function renderCard() {
   const evAt = ['13:00', '15:00', '18:00'][state.evalIdx];
   const any = Object.values(state.results).find(r => r.evaluations);
-  $('#cardsub').textContent = any ? `${evAt} · 입자 2,000개 중 · ${any.input_label}` : '계산 전';
+  const where = any ? (any.executor === 'daytona' ? 'Daytona sandbox 실행' : '로컬 실행 (스폰서 실행 아님)') : '';
+  $('#cardsub').textContent = any ? `${evAt} KST · 입자 2,000개 중 · ${any.input_label} · ${where}` : '계산 전';
   $('#kpis').innerHTML = ['S0', 'S1', 'S2'].map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx];
     const allOut = e && e.state_counts.ACTIVE === 0;
     const val = e ? (allOut ? '—' : pct(e.top_cell_fraction)) : '—';
-    const st = r && !r.evaluations ? `<span class="st">${r.status}</span>` : (allOut ? `<span class="st">모두 해역 밖 · 미확인 ${pct(e.unresolved_fraction)}</span>` : '');
+    const c = e?.state_counts || {}, n = e?.n || 2000;
+    const why = c.OUT_OF_DOMAIN === n ? '모두 해역 밖' : c.DATA_MISSING === n ? '모두 데이터 없음' : '계산 중인 입자 없음';
+    const st = r && !r.evaluations ? `<span class="st">${r.status}</span>` : (allOut ? `<span class="st">${why} · 미확인 ${pct(e.unresolved_fraction)}</span>` : '');
     return `<div class="k"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${st}</div>`;
   }).join('');
-  $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => `${sid} ${pct(state.results[sid]?.evaluations?.[state.evalIdx]?.unresolved_fraction)}`).join(' · ');
+  $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => {
+    const e = state.results[sid]?.evaluations?.[state.evalIdx];
+    return e ? `${sid} ${e.unresolved_count}/${e.n}개 ${pct(e.unresolved_fraction)}` : `${sid} —`;
+  }).join(' · ');
   const rows = ['S0', 'S1', 'S2'].map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx]; const sc = r?.scenario || {};
     const n = e?.n || 2000, sc_ = e?.state_counts || {};
@@ -193,9 +199,9 @@ function renderCard() {
 }
 
 function renderRows(batch) {
-  const items = batch?.items || {};
+  for (const [sid, it] of Object.entries(batch?.items || {})) state.rows[sid] = { it, r: batch.results?.[sid] };
   $('#runrows').innerHTML = ['S0', 'S1', 'S2'].map(sid => {
-    const it = items[sid]; const r = batch?.results?.[sid];
+    const it = state.rows[sid]?.it; const r = state.rows[sid]?.r;
     let ph = '대기', cls = '';
     if (it) {
       ph = { queued: '대기', creating_sandbox: 'sandbox 생성 중', uploading: '올리는 중', running: '계산 중', done: '' }[it.phase] ?? it.phase;
@@ -210,6 +216,9 @@ function renderRows(batch) {
     return `<li><span class="d" style="background:${CSS_COLORS[sid]}"></span><span>${LABELS[sid]}</span><span class="ph ${cls}">${ph}${retry}</span>${where ? `<span class="sb">${where}${t ? ' · ' + t : ''}</span>` : ''}</li>`;
   }).join('');
   document.querySelectorAll('[data-retry]').forEach(b => b.onclick = () => run([b.dataset.retry]));
+  const rs = Object.values(state.rows).map(x => x.r).filter(Boolean);
+  const ex = [...new Set(rs.map(r => r.executor === 'daytona' ? 'Daytona sandbox' : '로컬 실행 (스폰서 실행 아님)'))].join(' + ');
+  $('#src-label').textContent = (state.source === 'cache' ? '저장된 예보' : '합성 흐름 (UI 개발용)') + (ex ? ` · ${ex}` : '');
 }
 
 function banner(text, kind) {
@@ -221,7 +230,8 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   $('#runbtn').disabled = true;
   const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source }) });
   const j = await res.json();
-  if (!j.batch_id) { banner(`${j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
+  if (!j.batch_id) { banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
+  banner(null);
   for (const s of scenarios) delete state.results[s];
   renderCard();
   let batch;
@@ -233,7 +243,20 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   Object.assign(state.results, batch.results);
   renderCard(); setFrame(0); state.playing = true; $('#play').textContent = '❚❚';
   const prov = Object.values(batch.results).find(r => r.provenance)?.provenance?.current;
-  if (prov) $('#prov').textContent = `해류: ${prov.provider} · 요청 ${prov.requested_point} → 반환 ${prov.returned_point} · 수신 시각 ${prov.received_at_label} · 탐침 시작 ${prov.probe_start} · sha256 ${prov.sha256.slice(0, 12)}…`;
+  if (prov) $('#prov').innerHTML = [
+    `해류 출처: ${prov.provider} (${prov.file})`,
+    `요청 위치 ${prov.requested_point.join(', ')} → 반환 위치 ${prov.returned_point.join(', ')} · 약 ${(prov.separation_m / 1000).toFixed(1)} km 차이`,
+    `예보 기간 ${prov.time_span.join(' ~ ')} (Asia/Seoul) · 단위 ${Object.entries(prov.units).map(([k, v]) => `${k} ${v}`).join(', ')}`,
+    `수신 시각 미확인 (${prov.received_at_label}) · 발표 시각 미확인 (${prov.publication_time_label}) · 탐침 시작 ${prov.probe_start}`,
+    `sha256 ${prov.sha256}`,
+    `요청 URL <a href="${prov.request_url}" target="_blank" rel="noopener">${prov.request_url.replace(/</g, '&lt;')}</a>`,
+  ].map(x => `<div>${x}</div>`).join('');
+  const dl = $('#dl'); dl.hidden = false;
+  dl.onclick = ev => {
+    ev.preventDefault();
+    const blob = new Blob([JSON.stringify({ golden_sea_export: 1, disclosures: state.config?.disclosures, results: state.results }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'golden-sea-results.json'; a.click();
+  };
   $('#runbtn').disabled = false;
   if (state.config?.briefing?.available && Object.values(batch.results).some(r => r.evaluations)) {
     const bx = $('#brief'); bx.hidden = false; bx.innerHTML = '<em>Nosana 요약 생성 중…</em>';
@@ -242,11 +265,17 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   }
 }
 $('#runbtn').onclick = () => run();
-$('#executor').onchange = e => state.executor = e.target.value;
+$('#executor').onchange = e => { state.executor = e.target.value; note(); };
+function note() {
+  const dt = state.config?.executors?.daytona;
+  $('#rp-note').textContent = state.executor === 'daytona' ? '시나리오마다 sandbox 하나에서 동시에 계산합니다.'
+    : (dt?.available ? '이 컴퓨터에서 계산합니다. 스폰서 실행이 아닙니다.' : `Daytona 미연결: ${dt?.reason}`);
+}
 
 async function init() {
   await loadTerrain();
   const cfg = await (await fetch('/api/config')).json(); state.config = cfg;
+  if (cfg.disclosures) $('#disc').innerHTML = cfg.disclosures.map(d => `<li>${d.ko}</li>`).join('');
   const dt = cfg.executors.daytona;
   $('#executor').innerHTML = `<option value="local">로컬 실행</option><option value="daytona" ${dt.available ? '' : 'disabled'}>Daytona sandbox${dt.available ? '' : ' (키 필요)'}</option>`;
   if (dt.available) { state.executor = 'daytona'; $('#executor').value = 'daytona'; }
@@ -255,7 +284,7 @@ async function init() {
   state.source = forced === 'synthetic' || !cacheOk ? 'synthetic' : 'cache';
   $('#src-label').textContent = state.source === 'cache' ? '저장된 예보' : '합성 흐름 (UI 개발용)';
   if (!cacheOk) banner('저장된 예보 파일이 없거나 해시가 다릅니다 (SETUP_BLOCKED). 지금은 UI 개발용 합성 흐름으로만 보여 줍니다. 예보가 아닙니다.', 'warn');
-  $('#rp-note').textContent = dt.available ? '시나리오마다 sandbox 하나에서 동시에 계산합니다.' : `Daytona 미연결: ${dt.reason}`;
+  note();
   renderRows(null); renderCard(); setFrame(0);
 }
 init();

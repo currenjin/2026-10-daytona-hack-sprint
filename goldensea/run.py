@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import math
 import json
 import time
 import uuid
@@ -17,7 +18,8 @@ from pathlib import Path
 from .engine import Box, Particle, Projection, bin_counts, simulate_frames
 from .forcing import DataError, SetupBlocked, build_forcing, load_entry
 from .scenarios import (DOMAIN_LAT, DOMAIN_LON, EARLIEST, EVAL_END, EVAL_TIMES, INCIDENT_LAT,
-                        INCIDENT_LON, SCENARIOS, validate)
+                        INCIDENT_LON, SCENARIOS, DISCLOSURES, UNITS, InputError, validate,
+                        validate_support)
 
 ROOT = Path(__file__).resolve().parent.parent
 LATENT_SHA256 = "4441c7371bcf0cf7f3ab032843509f168a00d33dbbd49cba6e79c94b2a3f6884"
@@ -57,15 +59,20 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
         "quality_flags": ["COASTLINE_UNVERIFIED", "SURFACE_CURRENT_UNVERIFIED"]
                          + (["WIND_ADAPTER_UNVERIFIED"] if sc.alpha else []),
         "stranding_fraction": None,
+        "disclosures": DISCLOSURES,
+        "units": UNITS,
         "input_source": source,
         "input_label": ("저장된 예보 (고정 캐시)" if source == "cache"
                         else "합성 흐름 · UI 개발용 · 예보 아님"),
     }
     t0 = time.perf_counter()
+    try:
+        validate(INCIDENT_LAT, INCIDENT_LON, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
+    except InputError as e:
+        return {**run, "status": "INPUT_ERROR", "error": str(e)}
     if source == "synthetic":
         return {**run, **synthetic_run(sc, contracts, t0), "status": "OK_SYNTHETIC"}
     try:
-        validate(INCIDENT_LAT, INCIDENT_LON, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
         manifest = json.loads((contracts / "cache-manifest.json").read_text())
         entries = {e["file"]: e for e in manifest["entries"]}
         marine, prov_m = load_entry(cache_dir, entries["openmeteo_marine.json"])
@@ -79,6 +86,10 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
     t_load = time.perf_counter()
 
     forcing = build_forcing(marine, wind, EPOCH)
+    try:
+        validate_support(EARLIEST, EVAL_END, forcing.support, EPOCH)
+    except InputError as e:
+        return {**run, "status": "INPUT_ERROR", "error": str(e)}
     proj = Projection(INCIDENT_LAT, INCIDENT_LON)
     dom = domain_box(proj)
     return {**run, **simulate(latent, sc, forcing, dom, proj, t0, t_load), "status": "OK",
@@ -86,6 +97,12 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
 
 
 FRAME_STEP_S = 600
+
+
+def cell_round(v: float) -> int:
+    """Nearest integer metre that stays in the same 1 km cell as v."""
+    r = round(v)
+    return r if math.floor(r / 1000) == math.floor(v / 1000) else math.floor(v)
 
 
 def synthetic_run(sc, contracts: Path, t0) -> dict:
@@ -110,7 +127,7 @@ def simulate(latent, sc, forcing, dom, proj, t0, t_load) -> dict:
     ps = make_particles(latent, sc.radius_m, sc.latest_release)
     frames, evaluations = [], []
     for t, snap in simulate_frames(ps, forcing, sc.alpha, frame_times, domain=dom):
-        frames.append({"t": t, "xy": [v for x, y, _ in snap for v in (round(x), round(y))],
+        frames.append({"t": t, "xy": [v for x, y, _ in snap for v in (cell_round(x), cell_round(y))],
                        "s": "".join(st[0] for _, _, st in snap)})
         if round(t) in eval_s:
             agg = bin_counts(ps, 1000.0)

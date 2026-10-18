@@ -15,7 +15,8 @@ from goldensea.engine import (ACTIVE, DATA_MISSING, OUT_OF_DOMAIN, STRANDED, Box
                               total_velocity, wind_from_uv)
 from goldensea.forcing import Forcing, Segment, SetupBlocked, load_entry, provider_time_to_utc
 from goldensea.run import load_latent, make_particles, run_scenario
-from goldensea.scenarios import EARLIEST, EVAL_END, InputError, LATEST, validate
+from goldensea.scenarios import (DISCLOSURES, EARLIEST, EVAL_END, InputError, LATEST, LandRejected, validate,
+                                 validate_start, validate_support)
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTRACTS = ROOT / "contracts"
@@ -136,6 +137,10 @@ class Calculation(unittest.TestCase):
         land = LandMask([Box(x0, x1, y0, y1)])
         self.assertTrue(land.is_land(*i["land_input_m"]))
         self.assertFalse(land.is_land(*i["sea_control_m"]))
+        with self.assertRaises(LandRejected):
+            validate_start(*i["land_input_m"], land)
+        validate_start(*i["sea_control_m"], land)
+        validate_start(*i["land_input_m"], None)   # no mask: not rejected, coastline unverified
         # without a mask nothing becomes STRANDED
         p = run_const([[0, 0]], (1, 0), 3600)[0]
         self.assertNotEqual(p.state, STRANDED)
@@ -172,7 +177,30 @@ class Frames(unittest.TestCase):
                 self.assertEqual(st, d.state)
 
 
+    def test_cell_round_keeps_cell(self):
+        from goldensea.run import cell_round
+        for v in (999.6, -0.4, -1000.4, 1999.5, 1234.4, -999.5, 0.0):
+            self.assertEqual(math.floor(cell_round(v) / 1000), math.floor(v / 1000))
+            self.assertLessEqual(abs(cell_round(v) - v), 1.0)
+
+
 class InputValidation(unittest.TestCase):
+    def test_C15_outside_cached_time_support(self):
+        from datetime import timedelta
+        epoch = EARLIEST
+        support = (0.0, 6 * 3600.0)
+        validate_support(EARLIEST, EVAL_END, support, epoch)
+        with self.assertRaises(InputError):
+            validate_support(EARLIEST + timedelta(days=30), EVAL_END + timedelta(days=30), support, epoch)
+        with self.assertRaises(InputError):
+            validate_support(EARLIEST, EVAL_END, None, epoch)
+
+    def test_C14_disclosures_in_export(self):
+        res = run_scenario("S0", ROOT / "tests" / "no-such-cache", CONTRACTS)
+        self.assertEqual(len(res["disclosures"]), 9)
+        self.assertEqual(len(DISCLOSURES), 9)
+        self.assertIn("units", res)
+
     def test_C15_input_errors(self):
         bad = [
             dict(lat=math.nan, lon=129.3, radius_m=250, alpha=0.0),

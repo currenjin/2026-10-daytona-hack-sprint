@@ -14,11 +14,12 @@
   <div class="brand"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 16c3-3 6-3 9 0s6 3 9 0" stroke="#26e0c6" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 11c3-3 6-3 9 0s6 3 9 0" stroke="#7b74ff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
     <div><b>Golden <i>Sea</i></b><small>표류 가정 비교</small></div></div>
   <div class="loc"><span class="pin"></span><div><div class="t">부산 앞바다 · 가상 사고</div><div class="c">35.1000° N · 129.3000° E · 12:00–12:15 KST</div></div></div>
+  <button class="info" id="infobtn" type="button"><span>ⓘ</span> 한계와 가정 · 합성 사고, 공식 수색 안내 아님</button>
 </header>
 
 <div class="pill" role="toolbar" aria-label="재생">
   <button id="play" class="icon" aria-label="재생">▶</button>
-  <span id="clock" class="clock">12:00</span>
+  <span class="clock"><span id="clock">12:00</span><small> KST</small></span>
   <input id="scrub" type="range" min="0" max="36" value="0" aria-label="시각">
   <div class="seg" id="viewseg"><button data-v="3d" class="on">3D</button><button data-v="2d">2D</button></div>
 </div>
@@ -34,20 +35,20 @@
 </aside>
 
 <section class="card" id="card">
-  <h2>가장 많이 모인 1 km 칸 <small id="cardsub">계산 전</small></h2>
+  <h2>가장 많이 모인 1 km 칸의 입자 비율 <small id="cardsub">계산 전</small></h2>
   <div class="evals" id="evalseg"><button data-i="0" class="on">13:00</button><button data-i="1">15:00</button><button data-i="2">18:00</button></div>
   <div class="kpis3" id="kpis"></div>
-  <div class="meta"><span>미확인 <b id="unres">—</b></span></div>
+  <div class="meta"><span>미확인 (데이터 없음 + 해역 밖) <b id="unres">—</b></span></div>
+  <div class="legend small muted"><span><i class="lg-o"></i>해역 밖으로 나간 입자 (미확인)</span><span>비율 = 입자 2,000개 중 몫 · 확률 아님</span><a id="dl" href="#" hidden>결과 JSON 내려받기</a></div>
   <div id="brief" class="brief" hidden></div>
   <details class="more"><summary>세부 보기</summary><div class="tw"><table id="detail"></table></div></details>
 </section>
 
 <div id="banner" class="banner" hidden></div>
 
-<button class="info" id="infobtn" type="button"><span>ⓘ</span> 한계와 가정</button>
 <dialog id="limitsDlg" class="dlg">
   <h3>이 화면의 한계 · 가정</h3>
-  <ul>
+  <ul id="disc">
     <li>합성 사고 · 실제 사고 재현 아님</li>
     <li>저장된 예보 · 수신 시각 미확인 (탐침 시작 시각은 별도 표시)</li>
     <li>입자 비율 ≠ 발견·생존 확률</li>

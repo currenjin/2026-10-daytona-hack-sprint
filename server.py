@@ -23,7 +23,8 @@ from pathlib import Path
 from goldensea import briefing
 from goldensea.executors import EXECUTORS, daytona_available
 from goldensea.forcing import SetupBlocked, load_entry
-from goldensea.scenarios import SCENARIOS
+from goldensea.scenarios import (DISCLOSURES, EARLIEST, EVAL_END, INCIDENT_LAT, INCIDENT_LON, SCENARIOS,
+                                 UNITS, InputError, validate)
 
 ROOT = Path(__file__).resolve().parent
 WEB = ROOT / "web"
@@ -101,7 +102,25 @@ class Handler(SimpleHTTPRequestHandler):
                                              "daytona": {"available": ok, "reason": why}},
                                "briefing": {"available": bok, "reason": bwhy},
                                "cache": cache_status(),
+                               "disclosures": DISCLOSURES,
                                "scenarios": {k: v.echo() for k, v in SCENARIOS.items()}})
+        if self.path.startswith("/api/export/"):
+            bid = self.path.rsplit("/", 1)[-1]
+            with LOCK:
+                b = BATCHES.get(bid)
+                snap = json.loads(json.dumps(b)) if b else None
+            if not snap:
+                return self._json({"error": "unknown batch"}, 404)
+            body = json.dumps({"golden_sea_export": 1, "batch_id": bid, "executor": snap["executor"],
+                               "source": snap["source"], "disclosures": DISCLOSURES, "units": UNITS,
+                               "results": snap["results"]}, ensure_ascii=False).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Disposition", f'attachment; filename="golden-sea-{bid}.json"')
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if self.path.startswith("/api/batch/"):
             bid = self.path.rsplit("/", 1)[-1]
             with LOCK:
@@ -122,6 +141,12 @@ class Handler(SimpleHTTPRequestHandler):
             src = body.get("source", "cache")
             if any(s not in SCENARIOS for s in scen) or ex not in EXECUTORS or src not in ("cache", "synthetic"):
                 return self._json({"status": "INPUT_ERROR", "error": "unknown scenario/executor/source"}, 400)
+            try:
+                for s in scen:
+                    sc = SCENARIOS[s]
+                    validate(INCIDENT_LAT, INCIDENT_LON, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
+            except InputError as e:
+                return self._json({"status": "INPUT_ERROR", "error": str(e), "new_run": False}, 400)
             if ex == "daytona" and not daytona_available()[0]:
                 return self._json({"status": "SETUP_BLOCKED", "error": daytona_available()[1]}, 409)
             return self._json({"batch_id": start_batch(scen, ex, src)})
