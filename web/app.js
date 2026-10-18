@@ -385,6 +385,8 @@ function renderCard() {
     const e = state.results[sid]?.evaluations?.[state.evalIdx];
     return e ? `${LABELS[sid]} ${e.unresolved_count}/${e.n}` : `${LABELS[sid]} —`;
   }).join(' · ');
+  const anyUnres = SIDS.some(sid => (state.results[sid]?.evaluations?.[state.evalIdx]?.unresolved_count || 0) > 0);
+  $('#unres').closest('.meta').hidden = !anyUnres;
   const rows = SIDS.map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx]; const sc = r?.scenario || {};
     const n = e?.n || 2000, sc_ = e?.state_counts || {};
