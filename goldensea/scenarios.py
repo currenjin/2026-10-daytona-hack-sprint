@@ -12,8 +12,8 @@ from datetime import datetime, timezone, timedelta
 KST = timezone(timedelta(hours=9))
 
 INCIDENT_LAT, INCIDENT_LON = 35.1, 129.3
-DOMAIN_LAT = (34.9, 35.3)
-DOMAIN_LON = (129.0, 129.4)
+DOMAIN_LAT = (34.85, 35.45)  # widened for the demo (frozen scope: 34.9-35.3)
+DOMAIN_LON = (128.95, 129.55)  # frozen scope: 129.0-129.4
 EARLIEST = datetime(2026, 10, 18, 12, 0, tzinfo=KST)
 LATEST = datetime(2026, 10, 18, 12, 15, tzinfo=KST)
 EVAL_END = datetime(2026, 10, 18, 18, 0, tzinfo=KST)

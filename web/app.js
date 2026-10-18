@@ -44,7 +44,7 @@ const grid = new THREE.GridHelper(40, 40, 0x123236, 0x0d2427); grid.position.y =
 
 // domain box (34.9–35.3, 129.0–129.4)
 {
-  const pts = [[129.0, 34.9], [129.4, 34.9], [129.4, 35.3], [129.0, 35.3], [129.0, 34.9]].map(([lo, la]) => new THREE.Vector3(toX(lo), 0.01, toZ(la)));
+  const pts = [[128.95, 34.85], [129.55, 34.85], [129.55, 35.45], [128.95, 35.45], [128.95, 34.85]].map(([lo, la]) => new THREE.Vector3(toX(lo), 0.01, toZ(la)));
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xb08a3e, dashSize: 0.5, gapSize: 0.35 }));
   line.computeLineDistances(); scene.add(line);
 }
@@ -143,7 +143,7 @@ function computeCentroids(sid) {
   pts.forEach((p, i) => { if (p) last = p; arr[i * 3] = last[0]; arr[i * 3 + 1] = 0.1; arr[i * 3 + 2] = -last[1]; });
   trails[sid].geometry.attributes.position.needsUpdate = true;
 }
-const PLACES = [['해운대', 35.1587, 129.1604], ['광안리', 35.1532, 129.1186], ['오륙도', 35.0917, 129.1278], ['기장', 35.2445, 129.2222], ['사고 지점', 35.1, 129.3075], ['시연 해역 경계 · 밖은 미확인', 35.22, 129.4]];
+const PLACES = [['해운대', 35.1587, 129.1604], ['광안리', 35.1532, 129.1186], ['오륙도', 35.0917, 129.1278], ['기장', 35.2445, 129.2222], ['사고 지점', 35.1, 129.3075], ['시연 해역 경계 · 밖은 미확인', 35.3, 129.55]];
 const labelLayer = document.createElement('div'); labelLayer.className = 'labels'; document.body.appendChild(labelLayer);
 const placeEls = PLACES.map(([n]) => { const e = document.createElement('span'); e.textContent = n; labelLayer.appendChild(e); return e; });
 
