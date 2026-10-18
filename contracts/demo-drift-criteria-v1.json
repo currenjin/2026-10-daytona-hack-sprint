@@ -1,0 +1,935 @@
+{
+  "id": "drift-demo-criteria-v1",
+  "status": "FROZEN_CRITERIA_PRODUCT_NOT_RUN",
+  "stage": "criteria_only_not_product_verification",
+  "author": "GPT independent criteria; Claude Code claude-opus-5-5 semantic cross-review and recheck; parent tool-executed arithmetic/input audit",
+  "user_authorization": "2026-10-18 ㄱㄱ approves proposed Busan synthetic incident + cached forecast + assumption comparison criteria. Technical defaults below are agent choices, not quoted owner decisions.",
+  "scope": {
+    "product": "A-drift-search, current name provisional",
+    "incident_type": "synthetic, not Oryukdo accident reconstruction",
+    "incident_lat_lon": [
+      35.1,
+      129.3
+    ],
+    "earliest_release": "2026-10-18T12:00:00+09:00",
+    "latest_release": "2026-10-18T12:15:00+09:00",
+    "evaluation_end": "2026-10-18T18:00:00+09:00",
+    "first_slice_horizon_hours": 6,
+    "display_hours": [
+      1,
+      3,
+      6
+    ],
+    "previous_48h_proposal": "deferred, not silently counted as implemented",
+    "particles_n": 2000,
+    "baseline_radius_m": 250,
+    "baseline_alpha": 0,
+    "variant_radius_m": 1000,
+    "variant_latest_release": "2026-10-18T12:30:00+09:00",
+    "optional_alpha_sensitivity": [
+      0.01,
+      0.03
+    ],
+    "alpha_calibration": "none; assumptions, NOT validated person leeway coefficients",
+    "spatial_support_lat_lon": [
+      [
+        34.9,
+        35.3
+      ],
+      [
+        129.0,
+        129.4
+      ]
+    ],
+    "sample_point_field": "single request location shared across particles; spatially uniform approximation",
+    "max_step_s": 600,
+    "partial_release_and_hour_boundaries": "split/integrate exact remaining interval",
+    "hourly_sampling": "left-closed right-open, no extrapolation beyond support",
+    "diffusion": "disabled in first slice; no undocumented random walk",
+    "coastline": "real coastline source unresolved; only synthetic-mask control is ground-truthed",
+    "not_authorized": [
+      "operational search advice",
+      "real-accident accuracy claim",
+      "implementation",
+      "deployment",
+      "sponsor calls",
+      "account creation",
+      "paid calls"
+    ],
+    "integration_state_enum": [
+      "ACTIVE",
+      "UNRELEASED",
+      "DATA_MISSING",
+      "OUT_OF_DOMAIN",
+      "STRANDED"
+    ],
+    "real_grid": {
+      "origin_lat_lon": [
+        35.1,
+        129.3
+      ],
+      "cell_m": 1000,
+      "rule": "floor(x/1000),floor(y/1000); cells half-open on each axis"
+    },
+    "boundaries": {
+      "spatial_support": "closed min/max bounds; candidate strictly outside becomes OUT_OF_DOMAIN",
+      "synthetic_land_rectangle": "closed rectangle including edge; known land input rejected",
+      "time_samples": "left closed, right open",
+      "release_time": "a particle released exactly at evaluation time has zero displacement"
+    },
+    "display_absolute_times_kst": [
+      "2026-10-18T13:00:00+09:00",
+      "2026-10-18T15:00:00+09:00",
+      "2026-10-18T18:00:00+09:00"
+    ],
+    "scenario_presets": [
+      {
+        "id": "S0",
+        "radius_m": 250,
+        "latest_release": "2026-10-18T12:15:00+09:00",
+        "alpha": 0
+      },
+      {
+        "id": "S1",
+        "radius_m": 1000,
+        "latest_release": "2026-10-18T12:15:00+09:00",
+        "alpha": 0
+      },
+      {
+        "id": "S2",
+        "radius_m": 250,
+        "latest_release": "2026-10-18T12:30:00+09:00",
+        "alpha": 0
+      },
+      {
+        "id": "S3",
+        "optional": true,
+        "radius_m": 250,
+        "latest_release": "2026-10-18T12:15:00+09:00",
+        "alpha": 0.01
+      },
+      {
+        "id": "S4",
+        "optional": true,
+        "radius_m": 250,
+        "latest_release": "2026-10-18T12:15:00+09:00",
+        "alpha": 0.03
+      }
+    ],
+    "latent_distribution": {
+      "unit_east_north": "fixed sample authored from uniform AREA disk: r=sqrt(U), theta=2*pi*V; not Gaussian",
+      "radius_m": "maximum radial support, not standard deviation",
+      "release_unit": "fixed sample authored uniform [0,1]",
+      "bounds": "unit_east^2+unit_north^2<=1+3e-12; 0<=release_unit<=1",
+      "seed_policy": "product reads the frozen fixture; no cross-language PRNG equivalence assumption"
+    },
+    "input_validation": "All numeric inputs finite; coordinate inside declared closed support; 0<=radius_m<=1000; alpha in {0,0.01,0.03}; earliest<=latest<=evaluation; all sampled instants within cached time support. N=2000 and max first-slice horizon 6h are fixed.",
+    "latent_fixture_sha256": "4441c7371bcf0cf7f3ab032843509f168a00d33dbbd49cba6e79c94b2a3f6884"
+  },
+  "normative_math": {
+    "axes": "x=east meters, y=north meters",
+    "velocity": "v_total_m_s = current_TO_m_s + alpha * wind_TO_m_s; vectors retain speed magnitude, NOT unit vectors",
+    "current_to_vector": "u=(kmh/3.6)*sin(theta); v=(kmh/3.6)*cos(theta)",
+    "fraction_denominator": "ORIGINAL N. Each particle has exactly one integration state: ACTIVE, UNRELEASED, DATA_MISSING, OUT_OF_DOMAIN, STRANDED. Counts sum to N; cell fractions include ACTIVE only divided by N.",
+    "projection": "local spherical EQC, R=6371000m, lat_ts=lat0=35.1deg, lon0=129.3deg; cartographic approximation, not geodesic safety proof",
+    "wind_to_vector_from_FROM_deg": "u=-speed_ms*sin(theta); v=-speed_ms*cos(theta)",
+    "quality_flags": "Scene-level COASTLINE_UNVERIFIED, SURFACE_CURRENT_UNVERIFIED, WIND_ADAPTER_UNVERIFIED are orthogonal to integration state; do not create/remove particle mass.",
+    "no_real_coastline_mask": "No STRANDED classification or numeric stranding fraction; stranding_fraction=null. ACTIVE means numerically integrated under assumptions, not confirmed at sea."
+  },
+  "independence": {
+    "product_code_read_for_expected": false,
+    "old_spike_results_used_as_expected": false,
+    "previous_exposure": "Parent has seen old spike and data-probe logs. New analytic controls derive from definitions and fresh synthetic inputs, not those outputs.",
+    "latent_fixture_is_input_not_oracle": true,
+    "real_cached_forecast_accuracy": "UNVERIFIED; no rescue ground truth"
+  },
+  "surfaces": [
+    "calculation",
+    "data_adapter",
+    "input_validation",
+    "web_ui",
+    "evidence_download",
+    "execution_trace"
+  ],
+  "acceptance": {
+    "numeric_cases": "all stated numeric tolerances plus required status/invariants",
+    "case_aggregation": "Any required UI/provenance/state check failure prevents whole-case PASS even when numbers agree.",
+    "physical_accuracy": "UNVERIFIED regardless of arithmetic/control success",
+    "genuine_sponsor_usage": "requires actual provider execution and evidence; local/test-double never counts",
+    "performance": "record actual cache-load, computation and provider latency separately; no unmeasured target/speedup claim",
+    "expected_edits_after_product_observation": "forbidden; oracle-invalid handling preserves original and cannot revive same-event PASS",
+    "actual_storage": "new actual/evidence files reference this frozen contract hash; do not mutate frozen criteria JSON",
+    "optional_controls": "S0-S2 are mandatory. C13 paired_scenarios enumerates S0-S4, but S3-S4 real-wind UI comparisons are evaluated only when enabled and the wind adapter is verified. Disabled optional comparisons are reported not enabled/NOT_RUN, never PASS. C05 synthetic vector arithmetic remains a required control."
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "url": "https://proj.org/en/stable/operations/projections/eqc.html",
+      "method": "primary page opened 2026-10-18",
+      "supports": "spherical EQC forward/inverse relationships only; R is declared model constant"
+    },
+    {
+      "id": "S2",
+      "url": "https://www.ndbc.noaa.gov/measdes.shtml",
+      "method": "primary page opened 2026-10-18",
+      "supports": "meteorological wind FROM convention, not provider-specific adaptation or leeway coefficients"
+    },
+    {
+      "id": "S3",
+      "url": "https://open-meteo.com/en/docs/marine-weather-api",
+      "method": "primary page opened 2026-10-18",
+      "supports": "current TO convention, units, SMOC attribution, coastal limitations; not surface or rescue accuracy certification"
+    }
+  ],
+  "cases": [
+    {
+      "id": "C01",
+      "title": "정지 흐름: 위치 보존",
+      "surfaces": [
+        "calculation"
+      ],
+      "input": {
+        "particles_m": [
+          [
+            0,
+            0
+          ],
+          [
+            100,
+            -100
+          ]
+        ],
+        "current_uv_m_s": [
+          0,
+          0
+        ],
+        "alpha": 0,
+        "elapsed_s": 3600
+      },
+      "expected": {
+        "final_positions_m": [
+          [
+            0,
+            0
+          ],
+          [
+            100,
+            -100
+          ]
+        ],
+        "initial_particles_unchanged": true
+      },
+      "independent_basis": "x(t)=x0+u*t, y(t)=y0+v*t with u=v=0.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C02",
+      "title": "동쪽 일정 유속: 초·m 단위",
+      "surfaces": [
+        "calculation"
+      ],
+      "input": {
+        "particles_m": [
+          [
+            0,
+            0
+          ],
+          [
+            100,
+            -100
+          ]
+        ],
+        "current_uv_m_s": [
+          1,
+          0
+        ],
+        "alpha": 0,
+        "elapsed_s": 3600
+      },
+      "expected": {
+        "final_positions_m": [
+          [
+            3600,
+            0
+          ],
+          [
+            3700,
+            -100
+          ]
+        ]
+      },
+      "independent_basis": "1 m/s * 3600 s = 3600 m east; original offsets retained.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C03",
+      "title": "북쪽 일정 유속: 축 순서",
+      "surfaces": [
+        "calculation"
+      ],
+      "input": {
+        "particles_m": [
+          [
+            0,
+            0
+          ]
+        ],
+        "current_uv_m_s": [
+          0,
+          1
+        ],
+        "alpha": 0,
+        "elapsed_s": 3600
+      },
+      "expected": {
+        "final_positions_m": [
+          [
+            0,
+            3600
+          ]
+        ]
+      },
+      "independent_basis": "North is positive y, not longitude/east.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C04",
+      "title": "해류 방향은 향하는 쪽, km/h 환산",
+      "surfaces": [
+        "data_adapter",
+        "calculation"
+      ],
+      "input": {
+        "speed_km_h": 3.6,
+        "current_to_deg": [
+          0,
+          90,
+          180,
+          270
+        ],
+        "elapsed_s": 3600,
+        "alpha": 0
+      },
+      "expected": {
+        "displacement_by_heading_m": {
+          "0": [
+            0,
+            3600
+          ],
+          "90": [
+            3600,
+            0
+          ],
+          "180": [
+            0,
+            -3600
+          ],
+          "270": [
+            -3600,
+            0
+          ]
+        }
+      },
+      "independent_basis": "Divide km/h by 3.6; u=s*sin(theta), v=s*cos(theta). Marine API direction is TO.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C05",
+      "title": "바람 FROM 부호와 가정 계수",
+      "surfaces": [
+        "data_adapter",
+        "calculation"
+      ],
+      "input": {
+        "current_uv_m_s": [
+          0,
+          0
+        ],
+        "wind_speed_m_s": 10,
+        "elapsed_s": 3600,
+        "variants": [
+          {
+            "wind_from_deg": 270,
+            "alpha": 0.01
+          },
+          {
+            "wind_from_deg": 270,
+            "alpha": 0.03
+          },
+          {
+            "wind_from_deg": 0,
+            "alpha": 0.01
+          }
+        ]
+      },
+      "expected": {
+        "displacements_m": [
+          [
+            360,
+            0
+          ],
+          [
+            1080,
+            0
+          ],
+          [
+            0,
+            -360
+          ]
+        ],
+        "coefficients_label": "uncalibrated sensitivity assumptions"
+      },
+      "independent_basis": "Meteorological wind FROM, speed magnitude retained: u=-s*sin(theta), v=-s*cos(theta); dx=alpha*u*t. NOAA NDBC documents the FROM convention, not Open-Meteo-specific verification.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C06",
+      "title": "투입 시각 차이: 부분 시간 적분",
+      "surfaces": [
+        "calculation"
+      ],
+      "input": {
+        "particles_m": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        "release_offsets_s": [
+          0,
+          1800
+        ],
+        "evaluate_at_s": 3600,
+        "current_uv_m_s": [
+          1,
+          0
+        ],
+        "alpha": 0
+      },
+      "expected": {
+        "final_positions_m": [
+          [
+            3600,
+            0
+          ],
+          [
+            1800,
+            0
+          ]
+        ],
+        "before_release_motion": false
+      },
+      "independent_basis": "Each particle uses t_eval - t_release, not the full horizon.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C07",
+      "title": "시간 변화와 KST/UTC 동치",
+      "surfaces": [
+        "data_adapter",
+        "calculation"
+      ],
+      "input": {
+        "start_kst": "2026-10-18T12:00:00+09:00",
+        "equivalent_start_utc": "2026-10-18T03:00:00Z",
+        "segments_utc": [
+          {
+            "start": "2026-10-18T03:00:00Z",
+            "end": "2026-10-18T04:00:00Z",
+            "uv_m_s": [
+              1,
+              0
+            ]
+          },
+          {
+            "start": "2026-10-18T04:00:00Z",
+            "end": "2026-10-18T05:00:00Z",
+            "uv_m_s": [
+              0,
+              1
+            ]
+          }
+        ],
+        "initial_m": [
+          0,
+          0
+        ],
+        "provider_naive_time_variant": {
+          "local_time": "2026-10-18T12:00",
+          "utc_offset_seconds": 32400
+        }
+      },
+      "expected": {
+        "final_m": [
+          3600,
+          3600
+        ],
+        "kst_utc_same_instant": true,
+        "sample_interval": "left-closed right-open",
+        "provider_naive_time_as_utc": "2026-10-18T03:00:00Z"
+      },
+      "independent_basis": "Sum two 3600-second segments independently after timezone normalization.",
+      "tolerance": {
+        "position_m": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C08",
+      "title": "집계 질량 보존: 미확인 입자를 분모에서 빼지 않음",
+      "surfaces": [
+        "calculation",
+        "web_ui",
+        "evidence_download"
+      ],
+      "input": {
+        "initial_n": 4,
+        "valid_final_positions_m": [
+          [
+            100,
+            100
+          ],
+          [
+            200,
+            200
+          ],
+          [
+            1100,
+            100
+          ]
+        ],
+        "unresolved_n": 1,
+        "grid_origin_m": [
+          0,
+          0
+        ],
+        "grid_cell_m": 1000,
+        "bin_rule": "floor(x/1000), floor(y/1000)"
+      },
+      "expected": {
+        "cell_counts": {
+          "0,0": 2,
+          "1,0": 1
+        },
+        "cell_fractions": {
+          "0,0": 0.5,
+          "1,0": 0.25
+        },
+        "unresolved_fraction": 0.25,
+        "total_count": 4,
+        "all_fractions_sum": 1,
+        "forbidden_valid_only_renormalization": [
+          0.6666666666666666,
+          0.3333333333333333
+        ]
+      },
+      "independent_basis": "Fractions are counts divided by ORIGINAL N=4, including unresolved mass.",
+      "tolerance": {
+        "fraction_absolute": 1e-12
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C09",
+      "title": "누락 값을 0으로 바꾸지 않음",
+      "surfaces": [
+        "data_adapter",
+        "calculation",
+        "web_ui"
+      ],
+      "input": {
+        "variants": [
+          {
+            "current": [
+              null,
+              0
+            ],
+            "alpha": 0
+          },
+          {
+            "current": [
+              1,
+              0
+            ],
+            "wind": null,
+            "alpha": 0.01
+          },
+          {
+            "current": [
+              1,
+              0
+            ],
+            "wind": null,
+            "alpha": 0
+          }
+        ]
+      },
+      "expected": {
+        "variants": [
+          "DATA_MISSING",
+          "DATA_MISSING",
+          "wind_not_required_baseline_allowed"
+        ],
+        "invented_zero_or_extrapolated_flow": false,
+        "unresolved_mass_retained": true
+      },
+      "independent_basis": "Required input missing is unknown; wind is required iff alpha is nonzero.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C10",
+      "title": "영역 밖 이동과 조용한 좌표 clamp 금지",
+      "surfaces": [
+        "calculation",
+        "web_ui"
+      ],
+      "input": {
+        "domain_xy_m": [
+          [
+            0,
+            1000
+          ],
+          [
+            0,
+            1000
+          ]
+        ],
+        "particles_m": [
+          [
+            900,
+            500
+          ]
+        ],
+        "current_uv_m_s": [
+          1,
+          0
+        ],
+        "step_s": 600,
+        "safe_control_current_uv_m_s": [
+          0,
+          0
+        ]
+      },
+      "expected": {
+        "moving_case": "OUT_OF_DOMAIN",
+        "safe_control": "ACTIVE",
+        "unknown_fraction_moving": 1,
+        "silently_clipped_valid_particle": false,
+        "continued_valid_forecast_outside_domain": false
+      },
+      "independent_basis": "Candidate step exits declared spatial support. Exact exit position is not prescribed; status and mass must remain honest.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C11",
+      "title": "육지 판정의 정상·문제·미확인 분리",
+      "surfaces": [
+        "input_validation",
+        "calculation",
+        "web_ui"
+      ],
+      "input": {
+        "synthetic_land_rectangle_m": [
+          [
+            0,
+            1000
+          ],
+          [
+            0,
+            1000
+          ]
+        ],
+        "land_input_m": [
+          500,
+          500
+        ],
+        "sea_control_m": [
+          1500,
+          500
+        ],
+        "variant_missing_coastline_mask": true
+      },
+      "expected": {
+        "known_land_input": "REJECTED_LAND",
+        "sea_control": "not_rejected_as_land",
+        "missing_mask": "COASTLINE_UNVERIFIED",
+        "missing_mask_stranding_fraction": null,
+        "zero_stranding_or_coast_safety_claim_without_mask": false,
+        "missing_mask_scene_quality_flag": "COASTLINE_UNVERIFIED",
+        "missing_mask_particle_classification": "not STRANDED; retain numerical integration state",
+        "active_label": "numerically integrated; land passage unverified"
+      },
+      "independent_basis": "Independent synthetic rectangle is a control, not a real Busan shoreline oracle. Missing real coastline remains unverified.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C12",
+      "title": "저장 예보 입력·출처·캐시 바이트",
+      "surfaces": [
+        "data_adapter",
+        "web_ui",
+        "evidence_download"
+      ],
+      "input": {
+        "cache_manifest": "demo-reference/drift-criteria-20261018/cache-manifest.json",
+        "select_marine_and_wind_by": "request-list index, not deduplicated response coordinate",
+        "forecast_publication_time": null
+      },
+      "expected": {
+        "sha256_matches_manifest": true,
+        "required_provenance": [
+          "provider",
+          "request_url",
+          "requested_point",
+          "returned_point",
+          "received_at",
+          "time_span",
+          "units",
+          "sha256"
+        ],
+        "publication_time_label": "unknown",
+        "observation_or_live_fetch_claim": false,
+        "surface_current_verified_claim": false,
+        "raw_grid_mapping_verified_claim": false,
+        "real_drift_accuracy_verdict": "UNVERIFIED",
+        "received_at": null,
+        "received_at_label": "unknown",
+        "probe_start_shown_as_receipt": false,
+        "probe_start_label": "retrieval_started_at is probe start, not exact received time"
+      },
+      "independent_basis": "Archived request ledger and raw input fingerprints, NOT earlier drift outputs. Provenance may pass; physical accuracy has no independent oracle.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C13",
+      "title": "반복·변경 실험의 재현성과 격리",
+      "surfaces": [
+        "calculation",
+        "web_ui",
+        "evidence_download"
+      ],
+      "input": {
+        "latent_particles": "demo-drift-initial-particles-v1.json",
+        "same_inputs_runs": 2,
+        "paired_scenarios": [
+          "S0",
+          "S1",
+          "S2",
+          "S3",
+          "S4"
+        ],
+        "latent_sha256": "4441c7371bcf0cf7f3ab032843509f168a00d33dbbd49cba6e79c94b2a3f6884",
+        "required_scenarios": [
+          "S0",
+          "S1",
+          "S2"
+        ],
+        "optional_if_enabled": [
+          "S3",
+          "S4"
+        ]
+      },
+      "expected": {
+        "same_inputs_same_numeric_result": true,
+        "separate_run_identifiers": true,
+        "same_latent_draws_between_scenarios": true,
+        "baseline_inputs_and_results_unchanged_after_variant": true,
+        "variant_parameters_echoed": true,
+        "monotonic_area_or_accuracy_improvement_claim": false,
+        "spread_attributed_to_flow_uncertainty_claim": false,
+        "same_absolute_evaluation_times": [
+          "2026-10-18T13:00:00+09:00",
+          "2026-10-18T15:00:00+09:00",
+          "2026-10-18T18:00:00+09:00"
+        ]
+      },
+      "independent_basis": "Repeatability and preservation are invariants. No product hash or random-output result is preselected.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C14",
+      "title": "화면과 다운로드의 의미·수치 일치",
+      "surfaces": [
+        "web_ui",
+        "evidence_download"
+      ],
+      "input": {
+        "required_visible_disclosures": [
+          "synthetic incident",
+          "cached forecast; exact receipt time unknown; probe start is labeled separately",
+          "particle share is not discovery/survival probability",
+          "unverified coastal accuracy",
+          "uncalibrated wind coefficient if alpha nonzero",
+          "not official search guidance",
+          "single-point spatially uniform current; spread reflects initial position/time assumptions, NOT sampled flow uncertainty",
+          "ACTIVE particles may cross real land: real coastline unverified",
+          "requested and returned source locations, approximate separation; different wind/current locations"
+        ]
+      },
+      "expected": {
+        "disclosures_visible_without_expansion": true,
+        "map_counts_table_and_download_match": true,
+        "units_and_legend_visible": true,
+        "unknown_mass_visible": true,
+        "wrong_incident_result": false,
+        "offline_local_labeled_as_daytona_or_nosana": false,
+        "incident_identity_matches_scope": {
+          "lat_lon": [
+            35.1,
+            129.3
+          ],
+          "earliest_release": "2026-10-18T12:00:00+09:00",
+          "baseline_latest_release": "2026-10-18T12:15:00+09:00"
+        }
+      },
+      "independent_basis": "Presence in DOM or a hidden details panel is insufficient. Inspect rendered desktop/mobile after implementation.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C15",
+      "title": "실패·재시도·fallback·판정 분리",
+      "surfaces": [
+        "web_ui",
+        "evidence_download",
+        "execution_trace"
+      ],
+      "input": {
+        "faults": [
+          "cache_missing_or_hash_mismatch",
+          "one_scenario_runtime_failure",
+          "retry_after_failure",
+          "live_provider_unconfigured",
+          "nonfinite_coordinates",
+          "negative_or_over_1000m_radius",
+          "unsupported_alpha",
+          "earliest_after_latest_or_latest_after_evaluation",
+          "outside_cached_time_support"
+        ]
+      },
+      "expected": {
+        "cache_invalid": "SETUP_BLOCKED_OR_DATA_ERROR_not_success",
+        "one_failed_scenario": "explicit_partial_failure_not_zero_particles_success",
+        "retry": "new_execution_same_input_identity_no_stale_other_result",
+        "local_fallback": "explicit_local_not_sponsor_verified",
+        "classes_separated": [
+          "PRODUCT_FAIL",
+          "MODEL_ERROR",
+          "INFRA_ERROR",
+          "ORACLE_INVALID",
+          "UNVERIFIED",
+          "NOT_RUN",
+          "SETUP_BLOCKED",
+          "DATA_ERROR",
+          "INPUT_ERROR"
+        ],
+        "invalid_input": "INPUT_ERROR; no new run; old result cannot be relabeled as the rejected input"
+      },
+      "independent_basis": "Fault injection after implementation must preserve source/run identity and distinguish infrastructure from model/science failure.",
+      "tolerance": null,
+      "actual": null,
+      "verdict": "NOT_RUN"
+    },
+    {
+      "id": "C16",
+      "title": "지도 좌표와 축·미터/도 변환",
+      "surfaces": [
+        "calculation",
+        "web_ui"
+      ],
+      "input": {
+        "origin_lat_lon": [
+          35.1,
+          129.3
+        ],
+        "sphere_R_m": 6371000,
+        "eqc_lat_ts_deg": 35.1,
+        "offsets_east_north_m": [
+          [
+            1000,
+            0
+          ],
+          [
+            0,
+            1000
+          ]
+        ],
+        "projection": "local spherical equidistant cylindrical"
+      },
+      "expected": {
+        "lat_lon_by_offset": [
+          [
+            35.1,
+            129.31099213978524
+          ],
+          [
+            35.10899321605919,
+            129.3
+          ]
+        ],
+        "latitude_longitude_swapped": false,
+        "physical_geodesic_accuracy_claim": false
+      },
+      "independent_basis": "Inverse spherical EQC: lat=lat0+(y/R)*180/pi, lon=lon0+(x/(R*cos(lat_ts)))*180/pi. PROJ reference formula scaled by the explicitly chosen model radius.",
+      "tolerance": {
+        "degrees_absolute": 1e-06
+      },
+      "actual": null,
+      "verdict": "NOT_RUN"
+    }
+  ],
+  "actual": null,
+  "verdict": "NOT_RUN",
+  "cross_review": {
+    "session_id": "45500869-d331-4564-80f1-bf82989098f0",
+    "model": "claude-opus-5-5",
+    "initial": "demo-reference/drift-criteria-20261018/review-claude-initial.md",
+    "recheck": "demo-reference/drift-criteria-20261018/review-claude-recheck.md",
+    "initial_permission_denials": 1,
+    "recheck_permission_denials": 0,
+    "scope": "source semantics reviewed; arithmetic/cache/latent assertions executed by parent, not by Claude",
+    "last_required_correction": "C10 safe_control ACTIVE applied before freeze; no product observed"
+  },
+  "freeze_provenance": "Initial draft and corrections were made BEFORE any new product output. The pre-review draft is preserved; prior archived spike exposure is disclosed under independence."
+}

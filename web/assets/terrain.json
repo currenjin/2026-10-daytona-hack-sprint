@@ -1,0 +1,17 @@
+{
+ "bbox_lon_lat": [
+  128.95,
+  34.85,
+  129.45,
+  35.35
+ ],
+ "size": [
+  512,
+  512
+ ],
+ "max_m": 764,
+ "encoding": "height_m = R*256 + G; B=255 where height>0 (land); sea/void height 0",
+ "source": "Copernicus DEM GLO-30 via AWS Open Data (copernicus-dem-30m)",
+ "attribution": "Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.",
+ "note": "Display terrain only. Not a verified coastline for drift stranding."
+}

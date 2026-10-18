@@ -1,58 +1,42 @@
-# Bumpbench (범프벤치)
+# Golden Sea
 
-패키지 업데이트 전후의 동작을 비교하고, 수정한 코드를 같은 입력으로 다시 검사하는 로컬 MVP.
+바다에 사람이 떨어졌을 때, 하나의 예측선 대신 **가정을 바꾼 여러 세계**를 동시에 돌려 입자가 어디로 퍼지는지 비교합니다.
+Daytona HackSprint Seoul · 2026-10-18.
 
-> Daytona HackSprint Seoul · 2026-10-18 · 행사 전 준비 중
-
-비공개 준비 저장소: `currenjin/daytona-hack-sprint-2026-10-18`. 기존 2026-09-19 Collider 출품작과 별도 제품입니다.
-
-- [준비 상태와 현장 연결 계획](docs/PREPARATION.md)
-- [실제 로컬 결과 화면](docs/screenshots/result.png) · [모바일 화면](docs/screenshots/mobile.png)
-- 한·영 슬라이드와 한국어 대본, guide의 행사 전 초안은 hackathon-kit에 있습니다. 제출 문구는 아직 작성하지 않았으며 실제 모델/Daytona 결과는 현장 검증 후 반영합니다.
-- [패치 형식 보강과 최신 검증](docs/PATCH_FORMATTING.md)
-
-## 현재 지원
-
-- 합성 Zod settings fixture 한 개, 정확히 3.25.76 → 4.1.12.
-- 고정 oracle 인증 → 기존/변경/수정 상태를 별도 Node 프로세스에서 실행.
-- 공식 변경 안내에 근거한 로컬 규칙 기반 자동 source patch.
-- 승인된 검정·라임 UI, 실제 진행 단계, 입력별 결과, 패치/증거 다운로드, 새 검증.
-
-기본 provider는 local-rule이고 환경은 local입니다. OpenAI-compatible 패치 생성과 Daytona 0.224.0 실행 adapter를 구현했으며 외부 opt-in/설정 readiness, 고정 소스 allowlist, 오류 비밀값 차단, sandbox 삭제 readback 경계를 로컬 테스트로 확인했습니다. 실제 모델·Daytona는 호출하지 않았습니다. test-double 결과는 TEST_DOUBLE_VERIFIED이며 genuine provider 또는 sponsor PASS가 아닙니다. 실제 GitHub PR, 범용 업그레이드, Nosana, TypeScript 제품 컴파일은 미지원/미검증입니다. LOCAL_VERIFIED는 고정 로컬 계약만 검증하며 행사 제품 전체 PASS가 아닙니다.
+- 사고: 부산 앞바다 **가상** 사고 (35.1°N, 129.3°E), 투입 12:00–12:15 KST, 입자 2,000개, 6시간
+- 시나리오: S0 기준안(반경 250 m) · S1 반경 1 km · S2 투입 ~12:30 (같은 초기 표본 공유)
+- 입력: 저장된 Open-Meteo 해류·GFS 바람 응답(SHA-256 고정, Git 미포함)
+- 화면: 3D/2D 지도, 6시간 재생, 시나리오별 핵심 숫자, 실행 패널(로컬 / Daytona sandbox)
+- 공식 수색 안내가 아니며 입자 비율은 발견·생존 확률이 아닙니다. 해안선·표층 유속은 미검증입니다.
 
 ## 실행
 
-검증한 환경: Node v25.8.1, npm 11.11.0. 다른 Node 버전 호환성은 별도 확인해야 합니다.
-
-```sh
-npm ci --ignore-scripts --no-audit --no-fund
-npm test
-node --test ui-test/state.test.mjs
-npm run verify
-npm start
+```bash
+# 저장된 예보 2개를 private-inputs/drift-cache-v1/ 에 둔다 (해시 불일치 시 SETUP_BLOCKED)
+python3 server.py                 # http://127.0.0.1:8787  (stdlib only)
+python3 -m unittest discover -s tests
 ```
 
-브라우저에서 http://127.0.0.1:4318 을 엽니다. PORT 환경 변수로 loopback 포트를 변경할 수 있습니다. 외부 네트워크 공개는 지원하지 않습니다.
+예보 파일이 없으면 화면이 SETUP_BLOCKED를 알리고, UI 개발용 합성 흐름(예보 아님)으로만 보여 줍니다.
 
-새 검증 버튼은 새 실행을 시작할 입력 화면으로 돌아갑니다. 서버 종료/재시작 시 in-memory 실행 이력은 사라집니다. 필요한 패치와 증거를 먼저 내려받으세요. npm run verify는 .runs/verify-evidence.json에 실제 결과를 원자적으로 저장합니다. 서버 프로세스는 Ctrl+C로 종료합니다. 추적된 Hermes 프로세스는 parent의 process handle로 중단할 수 있습니다.
+## Daytona / Nosana (현장 연결)
 
-## 평가 기준과 보안 경계
+- Daytona: `pip install daytona` 후 `DAYTONA_API_KEY`(필요 시 `DAYTONA_API_URL`, `DAYTONA_TARGET`)를 환경 변수로 넣으면 실행 패널에서 "Daytona sandbox"를 고를 수 있습니다. 시나리오마다 sandbox 하나를 만들어 엔진·계약·캐시를 올리고 `python3 -m goldensea.run`을 실행한 뒤 결과를 받고 sandbox를 지웁니다. 단계별 시간(create/upload/exec/download/delete)을 기록합니다.
+- Nosana: OpenAI 호환 엔드포인트를 `NOSANA_LLM_URL`(…/v1), `NOSANA_LLM_MODEL`, 필요 시 `NOSANA_API_KEY`로 넣으면 `/api/brief/<batch>`가 계산 숫자만 바꿔 말하는 요약을 만듭니다(새 숫자·확률 표현 금지).
+- 로컬 실행은 항상 "로컬 실행 (스폰서 실행 아님)"으로 표시합니다.
 
-contracts/demo-oracle-v1.json은 승인된 외부 계약의 복사본이고 canonical SHA-256으로 인증합니다. fixtures/zod-settings/schema.mjs만 알려진 record → partialRecord 규칙으로 바꿀 수 있습니다. tests/evaluator/oracle 변경이나 downgrade/validation bypass는 거절합니다.
+## 구조
 
-이 로컬 runner는 임의 repo·명령·모델 코드를 받지 않으며 OS sandbox가 아닙니다. 프로세스 분리를 미신뢰 코드의 보안 격리로 주장하지 않습니다. 실제 repo 및 AI 생성 소스는 Daytona 같은 격리 실행 경계를 구현한 뒤에 지원해야 합니다.
+| 경로 | 내용 |
+| --- | --- |
+| `goldensea/engine.py` | EQC 투영, 해류(TO)·바람(FROM) 벡터, ≤600초 분할 적분, 상태(ACTIVE/UNRELEASED/DATA_MISSING/OUT_OF_DOMAIN/STRANDED), 원래 N 분모 집계 |
+| `goldensea/forcing.py` | 캐시 SHA-256 확인, 요청 index 선택, KST/UTC 정규화, 시간별 구간 |
+| `goldensea/run.py` | 시나리오 실행, 10분 프레임, 13/15/18시 평가, 출처·시간 기록 (CLI 겸용) |
+| `goldensea/executors.py` | 로컬 / Daytona sandbox 실행 |
+| `goldensea/briefing.py` | 선택: Nosana 요약 |
+| `server.py`, `web/` | stdlib 서버와 three.js 화면 |
+| `contracts/` | 고정 기준(demo-drift-criteria-v1.json, SHA 고정), 초기 입자, 캐시 manifest |
+| `tests/test_criteria.py` | 고정 기준 파일에서 기대값을 읽는 테스트 |
+| `tools/make_terrain.py` | Copernicus DEM GLO-30 → `web/assets/terrain.png` |
 
-## 검증 결과
-
-현재 정확한 테스트 수와 부모가 실제 재실행한 범위는 docs/PATCH_FORMATTING.md 및 kit의 evidence/pre-event-final-tests.json에 있습니다. Backend 152/152, UI 11/11이며 합계 163개가 통과했습니다. 실제 Chrome에서 10/10 → 6/10 → 10/10, 중복 시작 방지, patch/evidence 다운로드, 초기화 후 새 실행과 390px 가로 overflow 없음, pageerror 없음 확인. 준비되지 않은 외부 설정은 실제 loopback 서버로 CONFIG_ERROR, 시작 버튼 비활성과 runner 호출 0을 확인했습니다.
-
-TDD RED/GREEN 내역은 backend-verification.md 참조. 기존 수동 spike와 이번 자동 로컬 rule 실행은 서로 다른 증거입니다. 테스트 통과가 실제 모델 품질이나 sponsor 연결 성공을 뜻하지 않습니다.
-
-## 근거와 라이선스
-
-- 공식 migration guide: https://zod.dev/v4/changelog#improves-enum-support
-- Zod: https://github.com/colinhacks/zod (MIT), 정확한 버전은 package-lock.json에 고정.
-- 원본 요구사항/디자인 승인/행사 계약은 hackathon-kit의 workspace/2026-daytona-hacksprint-seoul-oct18/에 유지.
-- 사용자 이미지 레퍼런스의 원본 파일은 이 제품에 포함하지 않았습니다.
-
-사전 제작이 공식 허용되었다고 확인하지 않았습니다. 사용자 승인 아래 허용 가정으로 만든 로컬 준비물입니다. 현재 소스는 비공개 준비 저장소에서 보존합니다. 공개 배포 및 실제 외부 모델·sponsor 호출은 하지 않았습니다. Daytona 키·크레딧은 행사장에서 받아 `/adapt` 단계에서 연결하는 계획입니다.
+지형: Produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved. 표시용이며 해안선 검증이 아닙니다.

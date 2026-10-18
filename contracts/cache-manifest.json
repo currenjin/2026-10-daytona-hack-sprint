@@ -1,0 +1,82 @@
+{
+  "id": "drift-cache-provenance-v1",
+  "entries": [
+    {
+      "file": "openmeteo_marine.json",
+      "sha256": "309a7d12182fb08841986f9cb7c49cb559153bb1f430962556b11b83ceb795d4",
+      "bytes": 56134,
+      "request_url": "https://marine-api.open-meteo.com/v1/marine?latitude=34.9,34.9,34.9,34.9,34.9,35.0,35.0,35.0,35.0,35.0,35.1,35.1,35.1,35.1,35.1,35.2,35.2,35.2,35.2,35.2,35.3,35.3,35.3,35.3,35.3&longitude=129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4&hourly=ocean_current_velocity,ocean_current_direction&forecast_days=3&timezone=Asia%2FSeoul&cell_selection=sea",
+      "request_list_index_zero_based": 13,
+      "requested_lat_lon": [
+        35.1,
+        129.3
+      ],
+      "returned_lat_lon": [
+        35.125,
+        129.29167
+      ],
+      "time_span": [
+        "2026-10-18T00:00",
+        "2026-10-20T23:00"
+      ],
+      "timezone": "Asia/Seoul",
+      "utc_offset_seconds": 32400,
+      "units": {
+        "time": "iso8601",
+        "ocean_current_velocity": "km/h",
+        "ocean_current_direction": "°"
+      },
+      "retrieval_started_at": "2026-10-18T11:25:33+09:00",
+      "exact_received_at": null,
+      "exact_received_at_status": "not recorded; must not equate probe start with response receipt",
+      "forecast_publication_time": null,
+      "license_adoption_status": "not cleared for public deployment",
+      "physical_validation": "UNVERIFIED",
+      "original_task_scratch_input_path": "/Users/oc_currenjin/.hermes/cache/scratch/daytona-claude-handoff-20261018/work/raw/openmeteo_marine.json",
+      "workspace_relative_input_path": "private-inputs/drift-cache-v1/openmeteo_marine.json",
+      "requested_to_returned_eqc_separation_m": 2881.315,
+      "separation_method": "approximate local spherical EQC, not exact geodesic"
+    },
+    {
+      "file": "openmeteo_wind_gfs_global.json",
+      "sha256": "2629a0f905ed57d15d01dbea622006aec3a98294c5bec9deb1c1f5c7a3ceb1a9",
+      "bytes": 58500,
+      "request_url": "https://api.open-meteo.com/v1/forecast?latitude=34.9,34.9,34.9,34.9,34.9,35.0,35.0,35.0,35.0,35.0,35.1,35.1,35.1,35.1,35.1,35.2,35.2,35.2,35.2,35.2,35.3,35.3,35.3,35.3,35.3&longitude=129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4,129.0,129.1,129.2,129.3,129.4&hourly=wind_speed_10m,wind_direction_10m&wind_speed_unit=ms&forecast_days=3&timezone=Asia%2FSeoul&models=gfs_global",
+      "request_list_index_zero_based": 13,
+      "requested_lat_lon": [
+        35.1,
+        129.3
+      ],
+      "returned_lat_lon": [
+        35.203384,
+        129.14062
+      ],
+      "time_span": [
+        "2026-10-18T00:00",
+        "2026-10-20T23:00"
+      ],
+      "timezone": "Asia/Seoul",
+      "utc_offset_seconds": 32400,
+      "units": {
+        "time": "iso8601",
+        "wind_speed_10m": "m/s",
+        "wind_direction_10m": "°"
+      },
+      "retrieval_started_at": "2026-10-18T11:25:33+09:00",
+      "exact_received_at": null,
+      "exact_received_at_status": "not recorded; must not equate probe start with response receipt",
+      "forecast_publication_time": null,
+      "license_adoption_status": "not cleared for public deployment",
+      "physical_validation": "UNVERIFIED",
+      "original_task_scratch_input_path": "/Users/oc_currenjin/.hermes/cache/scratch/daytona-claude-handoff-20261018/work/raw/openmeteo_wind_gfs_global.json",
+      "workspace_relative_input_path": "private-inputs/drift-cache-v1/openmeteo_wind_gfs_global.json",
+      "requested_to_returned_eqc_separation_m": 18503.702,
+      "separation_method": "approximate local spherical EQC, not exact geodesic"
+    }
+  ],
+  "raw_data_not_committed": true,
+  "storage_status": "Exact snapshots copied into Git-ignored workspace private-inputs/drift-cache-v1; absent or changed bytes block setup; raw responses are not published.",
+  "on_missing_or_changed_bytes": "SETUP_BLOCKED; no silent substitution/new-live-fetch assertion",
+  "field_model": "one selected request location, time-varying and spatially uniform approximation; not reconstructed native SMOC grid",
+  "wind_from_convention": "Meteorological FROM degrees converted to wind_TO_m_s with speed magnitude retained; provider direction adaptation still unverified before optional real-wind scenario PASS."
+}

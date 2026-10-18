@@ -7,3 +7,5 @@ scripts/verify-evidence.json
 *.log
 .DS_Store
 test/patch-formatting-evidence.json
+private-inputs/
+__pycache__/
