@@ -7,7 +7,7 @@ When someone falls overboard, Golden Sea runs several "what-if" worlds side by s
 
 | | |
 | --- | --- |
-| Problem | Official drift forecasts are shown as one line. Since 2021, 165 of 256 sea and coastal missing-person cases in Korea are still unresolved (Korea Coast Guard data as reported by Munhwa Ilbo); in one Busan tugboat case the person was found about 100 km away in Pohang (Nocut News). |
+| Problem | Drift forecasts are usually shown as one line. From 2021 to June 2026, 165 of 256 people missing at sea or on the coast in Korea (64.5%) have not been found (Korea Coast Guard data via Rep. Moon Dae-rim, Financial News 2026-09-04). In the Sept 2026 Oryukdo tugboat capsizing off Busan, searchers focused on Busan and Ulsan waters, and one crew member was found about 100 km away in Pohang (Nocut News 2026-09-10). |
 | What it does | Synthetic incident off Busan (35.1°N, 129.3°E, 12:00–12:15 KST). S0 baseline (250 m radius), S1 radius 1 km, S2 release until 12:30. 6-hour playback in 3D/2D, the share of particles in the densest 1 km cell at 13:00 / 15:00 / 18:00. |
 | Result (stored forecast) | Densest 1 km cell at 13:00: S0 78.4%, S1 31.2%, S2 46.0%. By 18:00 all particles leave the demo domain and are shown as unresolved, not as 0. |
 | **Daytona** | Each scenario runs in its own Daytona sandbox: create → upload engine, contracts and cached forecast → run → download result → delete. Measured: 3 sandboxes in parallel, about 8 s each (create 1.2–1.6 s, upload ~3 s, compute ~0.9 s, download ~1.4 s, delete ~0.2 s). |
