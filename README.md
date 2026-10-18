@@ -34,7 +34,7 @@ python3 -m unittest discover -s tests
 | `goldensea/run.py` | 시나리오 실행, 10분 프레임, 13/15/18시 평가, 출처·시간 기록 (CLI 겸용) |
 | `goldensea/executors.py` | 로컬 / Daytona sandbox 실행 |
 | `goldensea/briefing.py` | 선택: Nosana 요약 |
-| `server.py`, `web/` | stdlib 서버와 three.js 화면 |
+| `server.py`, `web/` | stdlib 서버와 three.js 화면 (three 0.160 로컬 사본 `web/vendor/`, MIT) |
 | `contracts/` | 고정 기준(demo-drift-criteria-v1.json, SHA 고정), 초기 입자, 캐시 manifest |
 | `tests/test_criteria.py` | 고정 기준 파일에서 기대값을 읽는 테스트 |
 | `tools/make_terrain.py` | Copernicus DEM GLO-30 → `web/assets/terrain.png` |
