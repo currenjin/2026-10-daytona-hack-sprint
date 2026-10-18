@@ -156,6 +156,36 @@ function updateCells() {
   }
 }
 
+// particle density per 1 km cell (same floor rule as the table)
+const HEAT_N = 400, heatMat = [], heat = new THREE.Group(); scene.add(heat);
+const heatGeo = new THREE.PlaneGeometry(0.96, 0.96); heatGeo.rotateX(-Math.PI / 2);
+for (let i = 0; i < HEAT_N; i++) {
+  const m = new THREE.Mesh(heatGeo, new THREE.MeshBasicMaterial({ color: 0xff5a3c, transparent: true, opacity: 0, depthWrite: false, depthTest: false }));
+  m.visible = false; m.frustumCulled = false; m.renderOrder = 5; heat.add(m); heatMat.push(m);
+}
+function updateHeat(fi) {
+  const counts = new Map(); let total = 0;
+  for (const sid of ['S0', 'S1', 'S2']) {
+    const r = state.results[sid]; if (!r?.frames) continue;
+    if (state.focus && state.focus !== sid) continue;
+    const F = r.frames[fi];
+    for (let k = 0; k < 2000; k++) if (F.s[k] === 'A') {
+      const key = Math.floor(F.xy[2 * k] / 1000) + ',' + Math.floor(F.xy[2 * k + 1] / 1000);
+      counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    total += 2000;
+  }
+  let i = 0; const max = Math.max(1, ...counts.values());
+  for (const [key, c] of counts) {
+    if (i >= HEAT_N) break;
+    const [cx, cy] = key.split(',').map(Number), m = heatMat[i++];
+    const t = c / max;
+    m.position.set(cx + 0.5, 0.03, -(cy + 0.5)); m.visible = t > 0.02;
+    m.material.opacity = 0.18 + 0.62 * t; m.material.color.setHSL(0.08 - 0.08 * t, 1, 0.55);
+  }
+  for (; i < HEAT_N; i++) heatMat[i].visible = false;
+}
+
 function setFrame(f) {
   state.frame = f;
   const i0 = Math.floor(f), i1 = Math.min(i0 + 1, 36), a = f - i0;
@@ -184,6 +214,7 @@ function setFrame(f) {
     const tl = trails[sid]; tl.visible = !!centroids[sid];
     if (tl.visible) tl.geometry.setDrawRange(0, Math.floor(f) + 1);
   }
+  updateHeat(Math.round(f));
   const mins = Math.round(f * 10), hh = 12 + Math.floor(mins / 60), mm = mins % 60;
   $('#clock').textContent = `${hh}:${String(mm).padStart(2, '0')}`;
   $('#scrub').value = Math.round(f);
@@ -253,6 +284,31 @@ document.querySelectorAll('#evalseg button').forEach(b => b.onclick = () => {
   setFrame([6, 18, 36][state.evalIdx]); renderCard();
 });
 $('#infobtn').onclick = () => $('#limitsDlg').showModal();
+const cellCenter = key => {
+  const [i, j] = key.split(',').map(Number);
+  const lat = LAT0 + (j + 0.5) * 1000 / R * 180 / Math.PI, lon = LON0 + (i + 0.5) * 1000 / (R * COS) * 180 / Math.PI;
+  return `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
+};
+function shareText() {
+  const at = ['13:00', '15:00', '18:00'], L = [];
+  L.push('[Golden Sea 상황 공유 · 시연용 가상 사고]');
+  L.push('신고 12:16 · 낚싯배 승선자 1명 추락 · 35.1000° N, 129.3000° E (해운대 남동쪽 약 14 km) · 12:00~12:15 추정');
+  L.push('');
+  for (let ei = 0; ei < 3; ei++) {
+    L.push(`${at[ei]} KST 입자가 가장 많이 모인 1 km 칸`);
+    for (const sid of ['S0', 'S1', 'S2']) {
+      const e = state.results[sid]?.evaluations?.[ei];
+      if (!e) { L.push(`  ${LABELS[sid]}: 결과 없음`); continue; }
+      L.push(e.state_counts.ACTIVE === 0 ? `  ${LABELS[sid]}: 모든 입자 해역 밖 · 미확인` : `  ${LABELS[sid]}: ${cellCenter(e.top_cell)} 중심 · 입자 ${(e.top_cell_fraction * 100).toFixed(1)}%`);
+    }
+  }
+  L.push('');
+  L.push('입자 비율은 발견·생존 확률이 아닙니다. 공식 수색 지시가 아니며 판단은 상황실이 합니다.');
+  L.push('해류: 저장된 Open-Meteo 예보 · 계산: ' + (Object.values(state.results)[0]?.executor === 'daytona' ? 'Daytona sandbox' : '로컬'));
+  return L.join('\n');
+}
+$('#sharebtn').onclick = () => { $('#sharetext').value = shareText(); $('#shareDlg').showModal(); };
+$('#sharecopy').onclick = async () => { try { await navigator.clipboard.writeText($('#sharetext').value); $('#sharecopy').textContent = '복사됨'; } catch { $('#sharetext').select(); } setTimeout(() => $('#sharecopy').textContent = '복사', 1500); };
 
 // ---------- data ----------
 const pct = v => v == null ? '—' : `${(v * 100).toFixed(1)}%`;
@@ -285,7 +341,7 @@ function renderCard() {
   }
   $('#insight').textContent = ins; $('#insight').hidden = !ins;
   document.querySelectorAll('#kpis .k').forEach(k => k.onclick = () => {
-    state.focus = state.focus === k.dataset.sid ? null : k.dataset.sid; applyFocus(); renderCard();
+    state.focus = state.focus === k.dataset.sid ? null : k.dataset.sid; applyFocus(); renderCard(); updateHeat(Math.round(state.frame));
   });
   updateCells();
   $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => {
@@ -365,7 +421,7 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
     `sha256 ${prov.sha256}`,
     `요청 URL <a href="${prov.request_url}" target="_blank" rel="noopener">${prov.request_url.replace(/</g, '&lt;')}</a>`,
   ].map(x => `<div>${x}</div>`).join('');
-  const dl = $('#dl'); dl.hidden = false;
+  const dl = $('#dl'); dl.hidden = false; $('#sharebtn').hidden = false;
   dl.onclick = ev => {
     ev.preventDefault();
     const blob = new Blob([JSON.stringify({ golden_sea_export: 1, disclosures: state.config?.disclosures, results: state.results }, null, 1)], { type: 'application/json' });
@@ -380,6 +436,16 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
 }
 $('#runbtn').onclick = () => run();
 $('#intro-run').onclick = () => run();
+const REPORT = [['#f-what', '낚싯배 승선자 1명 추락'], ['#f-pos', '35.1000° N, 129.3000° E'], ['#f-ref', '해운대 남동쪽 약 14 km'], ['#f-time', '12:00 ~ 12:15'], ['#f-err', '반경 250 m']];
+$('#intro-fill').onclick = async () => {
+  $('#intro-fill').disabled = true;
+  for (const [sel, val] of REPORT) {
+    const el = $(sel);
+    for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(r => setTimeout(r, 18)); }
+    el.classList.add('filled');
+  }
+  $('#derived').hidden = false; $('#intro-fill').hidden = true; $('#intro-run').hidden = false;
+};
 $('#executor').onchange = e => { state.executor = e.target.value; note(); };
 function note() {
   const dt = state.config?.executors?.daytona;
@@ -400,7 +466,7 @@ async function init() {
   $('#src-label').textContent = state.source === 'cache' ? '저장된 예보' : '합성 흐름 (UI 개발용)';
   if (!cacheOk) banner('저장된 예보 파일이 없거나 해시가 다릅니다 (SETUP_BLOCKED). 지금은 UI 개발용 합성 흐름으로만 보여 줍니다. 예보가 아닙니다.', 'warn');
   note();
-  $('#intro-run').textContent = dt.available ? '계산 시작 · Daytona sandbox 3개' : '계산 시작 · 로컬';
+  $('#intro-run').textContent = dt.available ? '세 가지 가정으로 계산 · Daytona sandbox 3개' : '세 가지 가정으로 계산 · 로컬';
   renderRows(null); renderCard(); setFrame(0);
 }
 init();

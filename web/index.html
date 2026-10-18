@@ -4,105 +4,110 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Golden Sea</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css">
 <style>
-:root{--ink:#e9f3f2;--sub:#a9bdd6;--teal:#26e0c6;--indigo:#7b74ff;--amber:#f2b84b;--line:rgba(255,255,255,.14);
-  --font:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif}
+:root{--bg:#08090b;--ink:#eef1f2;--sub:#8b9297;--faint:#4a5055;--rule:#1d2124;--teal:#26e0c6;--white:#e9f3f2;--indigo:#7b74ff;
+  --font:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif}
 *{box-sizing:border-box}
-html,body{margin:0;background:#040a1c;color:var(--ink);font:16px/1.55 var(--font)}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--font);-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
-.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
-header{position:sticky;top:0;z-index:5;background:rgba(4,10,28,.7);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-header .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-.logo{display:flex;gap:10px;align-items:center;font-weight:700;font-size:18px}.logo i{font-style:normal;color:var(--teal)}
-.btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:12px 20px;font-weight:700;font-size:15px;border:1px solid var(--line)}
-.btn.primary{background:var(--teal);color:#032521;border-color:var(--teal)}
-.hero{position:relative;overflow:hidden;background:radial-gradient(circle at 75% 20%,#2a55ff 0,#0e2a5c 38%,#040a1c 75%)}
-.hero .wrap{padding:96px 24px 40px}
-.eyebrow{color:var(--teal);font-size:14px;font-weight:600;letter-spacing:.02em}
-h1{font-size:clamp(40px,7vw,76px);line-height:1.08;margin:14px 0 18px;letter-spacing:-.02em}
-.lead{font-size:clamp(17px,2.2vw,21px);color:var(--sub);max-width:640px;margin:0 0 30px;word-break:keep-all}
-.ctas{display:flex;gap:12px;flex-wrap:wrap}
-.shot{margin:56px 0 0;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 40px 100px rgba(0,0,0,.55)}
-.shot img{display:block;width:100%;height:auto}
-section{padding:88px 0;border-top:1px solid var(--line)}
-h2{font-size:clamp(28px,4vw,42px);line-height:1.2;margin:0 0 12px;letter-spacing:-.01em;word-break:keep-all}
-.sub{color:var(--sub);margin:0 0 36px;max-width:640px;word-break:keep-all}
-.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.stat{padding:26px 24px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
-.stat b{display:block;font-size:clamp(40px,6vw,60px);line-height:1;letter-spacing:-.02em}.stat b small{font-size:.45em}
-.stat span{display:block;margin-top:12px;color:var(--sub);font-size:15px;word-break:keep-all}
-.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:s}
-.step{padding:26px 24px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
-.step::before{counter-increment:s;content:counter(s);display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(38,224,198,.15);color:var(--teal);font-weight:700;margin-bottom:14px}
-.step h3{margin:0 0 6px;font-size:19px}.step p{margin:0;color:var(--sub);font-size:15px;word-break:keep-all}
-.step.hl{border-color:var(--teal);background:rgba(38,224,198,.08)}
-.worlds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.world{padding:22px 24px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
-.world i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
-.world b{font-size:18px}.world .pct{display:block;font-size:44px;font-weight:800;margin-top:10px;letter-spacing:-.02em}
-.world span{color:var(--sub);font-size:14px}
-.note{margin-top:22px;color:var(--sub);font-size:14px}
-.cta-end{text-align:center}.cta-end .ctas{justify-content:center}
-footer{padding:36px 0 56px;border-top:1px solid var(--line);color:#7f93ad;font-size:13px}
-footer p{margin:4px 0}
-@media (max-width:760px){.stats,.steps,.worlds{grid-template-columns:1fr}.hero .wrap{padding-top:64px}section{padding:64px 0}}
+.wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+nav{display:flex;justify-content:space-between;align-items:center;height:72px}
+.mark{font-weight:600;letter-spacing:-.01em;font-size:17px}.mark span{color:var(--teal)}
+.navlinks{display:flex;gap:28px;font-size:14px;color:var(--sub)}.navlinks a:hover{color:var(--ink)}
+.navlinks .go{color:var(--ink)}
+.meta{display:flex;gap:24px;flex-wrap:wrap;font-size:13px;color:var(--sub);padding-top:96px;letter-spacing:.01em}
+.meta b{color:var(--ink);font-weight:500}
+h1{font-size:clamp(44px,8.2vw,112px);line-height:1.02;letter-spacing:-.045em;font-weight:700;margin:28px 0 0;word-break:keep-all}
+.intro{display:grid;grid-template-columns:1fr 360px;gap:48px;align-items:end;margin-top:40px}
+.intro p{margin:0;font-size:18px;color:#b9c0c4;line-height:1.65;word-break:keep-all;max-width:560px}
+.cta{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.btn{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 24px;border-radius:999px;background:var(--ink);color:#08090b;font-weight:600;font-size:15px}
+.btn:hover{background:#fff}
+.link{font-size:14px;color:var(--sub);border-bottom:1px solid var(--faint);padding-bottom:2px}
+figure{margin:72px 0 0}
+figure img{display:block;width:100%;height:auto;border-radius:10px;border:1px solid var(--rule)}
+figcaption{margin-top:12px;font-size:13px;color:var(--sub)}
+section{border-top:1px solid var(--rule);padding:96px 0}
+.label{font-size:13px;color:var(--sub);letter-spacing:.02em;margin-bottom:28px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start}
+.big{font-size:clamp(64px,10vw,148px);font-weight:700;letter-spacing:-.05em;line-height:.95;font-variant-numeric:tabular-nums}
+.big small{font-size:.32em;color:var(--sub);font-weight:500;letter-spacing:-.01em;margin-left:6px}
+.prose h2{font-size:clamp(24px,2.8vw,34px);line-height:1.3;letter-spacing:-.02em;margin:0 0 18px;font-weight:600;word-break:keep-all}
+.prose p{margin:0 0 14px;color:#b9c0c4;word-break:keep-all}
+.src{font-size:12.5px;color:var(--faint);margin-top:22px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--rule)}
+.how div{padding:28px 28px 8px 0}.how div+div{padding-left:28px;border-left:1px solid var(--rule)}
+.how h3{margin:0 0 8px;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.how p{margin:0;color:var(--sub);font-size:15px;word-break:keep-all}
+.how .k{font-size:13px;color:var(--teal);margin-bottom:14px;font-variant-numeric:tabular-nums}
+.res{margin-top:8px}
+.row{display:grid;grid-template-columns:200px 1fr 90px;gap:24px;align-items:center;padding:22px 0;border-bottom:1px solid var(--rule)}
+.row .n{font-size:15px}.row .n span{display:block;color:var(--sub);font-size:13px}
+.bar{height:6px;background:#15181b;border-radius:3px;overflow:hidden}.bar i{display:block;height:100%;border-radius:3px}
+.row .v{text-align:right;font-size:28px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.foot{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:40px 0 64px;border-top:1px solid var(--rule);font-size:13px;color:var(--faint)}
+@media (max-width:860px){
+  .wrap{padding:0 20px}.navlinks a:not(.go){display:none}
+  .meta{padding-top:48px;gap:12px 20px}.intro,.split{grid-template-columns:1fr;gap:32px}
+  .how{grid-template-columns:1fr}.how div,.how div+div{padding:24px 0;border-left:0;border-bottom:1px solid var(--rule)}
+  .row{grid-template-columns:1fr 70px}.row .bar{grid-column:1/3;order:3}
+  section{padding:64px 0}
+}
 </style>
 </head>
 <body>
-<header><div class="wrap">
-  <a class="logo" href="#"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 16c3-3 6-3 9 0s6 3 9 0" stroke="#26e0c6" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 11c3-3 6-3 9 0s6 3 9 0" stroke="#7b74ff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>Golden <i>Sea</i></a>
-  <a class="btn primary" href="app.html">데모 열기</a>
-</div></header>
+<div class="wrap">
+  <nav>
+    <a class="mark" href="#">Golden <span>Sea</span></a>
+    <div class="navlinks"><a href="#problem">문제</a><a href="#how">방법</a><a href="#result">결과</a><a class="go" href="app.html">데모 →</a></div>
+  </nav>
 
-<div class="hero"><div class="wrap">
-  <div class="eyebrow">해상 실종 표류 비교 · Daytona × Nosana</div>
-  <h1>가정이 바뀌면<br>찾을 바다도 바뀝니다.</h1>
-  <p class="lead">신고만으로는 사람이 빠진 정확한 위치와 시각을 알기 어렵습니다. Golden Sea는 위치와 시각 가정을 바꿔 가며 표류를 동시에 계산하고 비교합니다.</p>
-  <div class="ctas"><a class="btn primary" href="app.html">데모 열기</a><a class="btn" href="https://github.com/currenjin/2026-10-daytona-hack-sprint">GitHub</a></div>
-  <div class="shot"><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"></div>
-</div></div>
-
-<section><div class="wrap">
-  <h2>해상 실종자 세 명 중 두 명은 아직 찾지 못했습니다.</h2>
-  <p class="sub">예측한 바다와 멀리 떨어진 곳에서 발견되는 경우도 있습니다.</p>
-  <div class="stats">
-    <div class="stat"><b>165<small>명</small></b><span>2021~2026.6 해상·연안 실종 256명 중 미발견 (64.5%)</span></div>
-    <div class="stat"><b>~100<small>km</small></b><span>부산·울산 앞바다를 수색했지만 포항에서 발견 (2026-09 오륙도 예인선)</span></div>
-    <div class="stat"><b>7~10<small>초</small></b><span>Daytona sandbox 하나에서 시나리오 하나를 계산하는 데 걸린 시간</span></div>
+  <div class="meta"><span><b>부산 앞바다</b> 가상 사고</span><span><b>Daytona</b> sandbox</span><span><b>Nosana</b> 요약</span><span>Daytona HackSprint Seoul · 2026.10.18</span></div>
+  <h1>해상 실종 신고를<br>세 가지 표류로 계산합니다</h1>
+  <div class="intro">
+    <p>신고만으로는 사람이 빠진 정확한 위치와 시각을 알기 어렵습니다. Golden Sea는 위치와 시각 가정을 바꿔 가며 표류를 동시에 계산하고, 결과가 얼마나 달라지는지 나란히 보여 줍니다.</p>
+    <div class="cta"><a class="btn" href="app.html">데모 열기 →</a><a class="link" href="https://github.com/currenjin/2026-10-daytona-hack-sprint">GitHub에서 코드 보기</a></div>
   </div>
-  <p class="note">출처: 해양경찰청 자료(문대림 의원실) 파이낸셜뉴스 2026-09-04 · 노컷뉴스 2026-09-10. 보도 수치이며 이 제품의 결과가 아닙니다.</p>
-</div></section>
+  <figure><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"><figcaption>13:00 KST 결과. Daytona sandbox 3개에서 계산하고 Nosana 모델이 요약을 썼습니다.</figcaption></figure>
+</div>
 
-<section><div class="wrap">
-  <h2>시나리오마다 Daytona sandbox를 하나씩 씁니다.</h2>
-  <p class="sub">같은 엔진에 입자 2,000개와 저장된 해류 예보를 넣고, 시나리오별로 따로 계산합니다.</p>
-  <div class="steps">
-    <div class="step"><h3>신고 접수</h3><p>기준안에 더해 위치를 반경 1 km로 넓힌 경우와 시각을 12:30까지 늦춘 경우를 만듭니다.</p></div>
-    <div class="step hl"><h3>Daytona sandbox 3개</h3><p>시나리오마다 sandbox를 띄워 만들고, 올리고, 계산하고, 받고, 지웁니다. 셋이 동시에 실행됩니다.</p></div>
-    <div class="step"><h3>비교와 요약</h3><p>가장 많이 모인 1 km 칸의 입자 비율을 비교하고, Nosana 모델이 계산된 숫자로만 두 줄 요약을 씁니다.</p></div>
+<section id="problem"><div class="wrap">
+  <div class="label">문제</div>
+  <div class="split">
+    <div class="big">165<small>/ 256명</small></div>
+    <div class="prose">
+      <h2>2021년 이후 해상 실종자 세 명 중 두 명은 아직 찾지 못했습니다.</h2>
+      <p>지난달 오륙도 예인선 사고 때는 부산과 울산 앞바다를 수색했지만, 실종자는 100 km쯤 떨어진 포항에서 발견됐습니다.</p>
+      <p>예측 하나만 보면 그 예측이 빗나갔을 때 다른 곳을 볼 근거가 없습니다.</p>
+      <div class="src">해양경찰청 자료(문대림 의원실), 파이낸셜뉴스 2026-09-04 · 노컷뉴스 2026-09-10. 보도 수치이며 이 제품의 결과가 아닙니다.</div>
+    </div>
   </div>
 </div></section>
 
-<section><div class="wrap">
-  <h2>위치 가정만 넓혀도 78%가 31%로 떨어집니다.</h2>
-  <p class="sub">부산 앞바다 가상 사고, 1시간 뒤(13:00 KST) 가장 많이 모인 1 km 칸의 입자 비율입니다.</p>
-  <div class="worlds">
-    <div class="world"><i style="background:#26e0c6"></i><b>S0 기준안</b><span class="pct">78.3%</span><span>반경 250 m · 12:00–12:15</span></div>
-    <div class="world"><i style="background:#e9f3f2"></i><b>S1 위치 불확실</b><span class="pct">31.2%</span><span>반경 1 km</span></div>
-    <div class="world"><i style="background:#7b74ff"></i><b>S2 시각 불확실</b><span class="pct">46.0%</span><span>12:30까지 투입</span></div>
+<section id="how"><div class="wrap">
+  <div class="label">방법</div>
+  <div class="how">
+    <div><div class="k">01</div><h3>신고를 가정 셋으로</h3><p>신고된 위치와 시각을 기준안으로 두고, 위치를 반경 1 km로 넓힌 경우와 시각을 12:30까지 늦춘 경우를 만듭니다.</p></div>
+    <div><div class="k">02</div><h3>Daytona sandbox 3개</h3><p>시나리오마다 sandbox를 하나씩 띄워 같은 엔진으로 입자 2,000개를 6시간 흘립니다. 하나당 7~10초 걸렸습니다.</p></div>
+    <div><div class="k">03</div><h3>비교와 요약</h3><p>가장 많이 모인 1 km 칸의 입자 비율을 비교하고, Nosana 모델이 계산된 숫자로만 요약을 씁니다.</p></div>
   </div>
-  <p class="note">입자 비율은 발견·생존 확률이 아닙니다. 해역을 벗어난 입자는 미확인으로 남깁니다.</p>
 </div></section>
 
-<section class="cta-end"><div class="wrap">
-  <h2>데모에서 직접 계산해 볼 수 있습니다.</h2>
-  <p class="sub" style="margin-left:auto;margin-right:auto">계산 시작을 누르면 세 시나리오가 동시에 실행됩니다.</p>
-  <div class="ctas"><a class="btn primary" href="app.html">데모 열기</a></div>
+<section id="result"><div class="wrap">
+  <div class="split">
+    <div class="prose"><div class="label">결과 · 13:00 KST</div><h2>위치 가정만 넓혀도 한 칸에 모이는 입자가 78%에서 31%로 줄어듭니다.</h2><p>입자 비율은 발견이나 생존 확률이 아닙니다. 해역을 벗어난 입자는 미확인으로 셉니다.</p></div>
+    <div class="res">
+      <div class="row"><div class="n">S0 기준안<span>반경 250 m · 12:00–12:15</span></div><div class="bar"><i style="width:78.3%;background:var(--teal)"></i></div><div class="v">78.3%</div></div>
+      <div class="row"><div class="n">S1 위치 불확실<span>반경 1 km</span></div><div class="bar"><i style="width:31.2%;background:var(--white)"></i></div><div class="v">31.2%</div></div>
+      <div class="row"><div class="n">S2 시각 불확실<span>12:30까지 투입</span></div><div class="bar"><i style="width:46%;background:var(--indigo)"></i></div><div class="v">46.0%</div></div>
+    </div>
+  </div>
 </div></section>
 
-<footer><div class="wrap">
-  <p>Golden Sea · Daytona HackSprint Seoul 2026-10-18</p>
-  <p>합성 사고이며 공식 수색 안내가 아닙니다. 해류는 저장된 Open-Meteo 예보(해시 고정), 지형은 Copernicus DEM GLO-30, 위치 지도는 geoBoundaries(CC BY 4.0).</p>
-</div></footer>
+<div class="wrap foot">
+  <span>Golden Sea · 합성 사고이며 공식 수색 안내가 아닙니다.</span>
+  <span>해류 Open-Meteo(저장된 예보) · 지형 Copernicus DEM GLO-30 · 위치 지도 geoBoundaries(CC BY 4.0)</span>
+</div>
 </body>
 </html>
