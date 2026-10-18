@@ -3,82 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Golden Sea · 표류 가정 비교</title>
-<link rel="stylesheet" href="styles.css">
-<script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/controls/OrbitControls.js":"./vendor/OrbitControls.js"}}</script>
+<title>Golden Sea</title>
+<style>
+:root{--ink:#e9f3f2;--sub:#a9bdd6;--teal:#26e0c6;--indigo:#7b74ff;--amber:#f2b84b;--line:rgba(255,255,255,.14);
+  --font:"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",system-ui,sans-serif}
+*{box-sizing:border-box}
+html,body{margin:0;background:#040a1c;color:var(--ink);font:16px/1.55 var(--font)}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+header{position:sticky;top:0;z-index:5;background:rgba(4,10,28,.7);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;gap:10px;align-items:center;font-weight:700;font-size:18px}.logo i{font-style:normal;color:var(--teal)}
+.btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:12px 20px;font-weight:700;font-size:15px;border:1px solid var(--line)}
+.btn.primary{background:var(--teal);color:#032521;border-color:var(--teal)}
+.hero{position:relative;overflow:hidden;background:radial-gradient(circle at 75% 20%,#2a55ff 0,#0e2a5c 38%,#040a1c 75%)}
+.hero .wrap{padding:96px 24px 40px}
+.eyebrow{color:var(--teal);font-size:14px;font-weight:600;letter-spacing:.02em}
+h1{font-size:clamp(40px,7vw,76px);line-height:1.08;margin:14px 0 18px;letter-spacing:-.02em}
+.lead{font-size:clamp(17px,2.2vw,21px);color:var(--sub);max-width:640px;margin:0 0 30px;word-break:keep-all}
+.ctas{display:flex;gap:12px;flex-wrap:wrap}
+.shot{margin:56px 0 0;border-radius:18px;overflow:hidden;border:1px solid var(--line);box-shadow:0 40px 100px rgba(0,0,0,.55)}
+.shot img{display:block;width:100%;height:auto}
+section{padding:88px 0;border-top:1px solid var(--line)}
+h2{font-size:clamp(28px,4vw,42px);line-height:1.2;margin:0 0 12px;letter-spacing:-.01em;word-break:keep-all}
+.sub{color:var(--sub);margin:0 0 36px;max-width:640px;word-break:keep-all}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.stat{padding:26px 24px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.stat b{display:block;font-size:clamp(40px,6vw,60px);line-height:1;letter-spacing:-.02em}.stat b small{font-size:.45em}
+.stat span{display:block;margin-top:12px;color:var(--sub);font-size:15px;word-break:keep-all}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;counter-reset:s}
+.step{padding:26px 24px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
+.step::before{counter-increment:s;content:counter(s);display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:rgba(38,224,198,.15);color:var(--teal);font-weight:700;margin-bottom:14px}
+.step h3{margin:0 0 6px;font-size:19px}.step p{margin:0;color:var(--sub);font-size:15px;word-break:keep-all}
+.step.hl{border-color:var(--teal);background:rgba(38,224,198,.08)}
+.worlds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.world{padding:22px 24px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.04)}
+.world i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px}
+.world b{font-size:18px}.world .pct{display:block;font-size:44px;font-weight:800;margin-top:10px;letter-spacing:-.02em}
+.world span{color:var(--sub);font-size:14px}
+.note{margin-top:22px;color:var(--sub);font-size:14px}
+.cta-end{text-align:center}.cta-end .ctas{justify-content:center}
+footer{padding:36px 0 56px;border-top:1px solid var(--line);color:#7f93ad;font-size:13px}
+footer p{margin:4px 0}
+@media (max-width:760px){.stats,.steps,.worlds{grid-template-columns:1fr}.hero .wrap{padding-top:64px}section{padding:64px 0}}
+</style>
 </head>
 <body>
-<div id="stage"></div>
+<header><div class="wrap">
+  <a class="logo" href="#"><svg width="24" height="24" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 16c3-3 6-3 9 0s6 3 9 0" stroke="#26e0c6" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 11c3-3 6-3 9 0s6 3 9 0" stroke="#7b74ff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>Golden <i>Sea</i></a>
+  <a class="btn primary" href="app.html">데모 열기</a>
+</div></header>
 
-<header class="brand-card">
-  <div class="brand"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 16c3-3 6-3 9 0s6 3 9 0" stroke="#26e0c6" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 11c3-3 6-3 9 0s6 3 9 0" stroke="#7b74ff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
-    <div><b>Golden <i>Sea</i></b><small>표류 가정 비교</small></div></div>
-  <div class="loc"><span class="pin"></span><div><div class="t">부산 앞바다 · 가상 사고</div><div class="c">35.1000° N · 129.3000° E · 12:00–12:15 KST</div></div></div>
-  <button class="info" id="infobtn" type="button"><span>ⓘ</span> 한계와 가정 · 합성 사고, 공식 수색 안내 아님</button>
-</header>
+<div class="hero"><div class="wrap">
+  <div class="eyebrow">해상 실종 표류 비교 · Daytona × Nosana</div>
+  <h1>가정이 바뀌면<br>찾을 바다도 바뀝니다.</h1>
+  <p class="lead">신고만으로는 사람이 빠진 정확한 위치와 시각을 알기 어렵습니다. Golden Sea는 위치와 시각 가정을 바꿔 가며 표류를 동시에 계산하고 비교합니다.</p>
+  <div class="ctas"><a class="btn primary" href="app.html">데모 열기</a><a class="btn" href="https://github.com/currenjin/2026-10-daytona-hack-sprint">GitHub</a></div>
+  <div class="shot"><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"></div>
+</div></div>
 
-<div class="pill" role="toolbar" aria-label="재생">
-  <button id="play" class="icon" aria-label="재생">▶</button>
-  <span class="clock"><span id="clock">12:00</span><small> KST</small></span>
-  <input id="scrub" type="range" min="0" max="36" value="0" aria-label="시각">
-  <div class="seg" id="viewseg"><button data-v="3d" class="on">3D</button><button data-v="2d">2D</button></div>
-</div>
-
-<aside class="runpanel" id="runpanel">
-  <div class="rp-head"><b>실행</b><span id="src-label" class="muted"></span></div>
-  <ul id="runrows"></ul>
-  <div class="rp-act">
-    <select id="executor" aria-label="실행 위치"></select>
-    <button id="runbtn" class="btn primary">S0–S2 계산</button>
+<section><div class="wrap">
+  <h2>해상 실종자 세 명 중 두 명은 아직 찾지 못했습니다.</h2>
+  <p class="sub">예측한 바다와 멀리 떨어진 곳에서 발견되는 경우도 있습니다.</p>
+  <div class="stats">
+    <div class="stat"><b>165<small>명</small></b><span>2021~2026.6 해상·연안 실종 256명 중 미발견 (64.5%)</span></div>
+    <div class="stat"><b>~100<small>km</small></b><span>부산·울산 앞바다를 수색했지만 포항에서 발견 (2026-09 오륙도 예인선)</span></div>
+    <div class="stat"><b>7~10<small>초</small></b><span>Daytona sandbox 하나에서 시나리오 하나를 계산하는 데 걸린 시간</span></div>
   </div>
-  <div id="rp-note" class="muted small"></div>
-</aside>
+  <p class="note">출처: 해양경찰청 자료(문대림 의원실) 파이낸셜뉴스 2026-09-04 · 노컷뉴스 2026-09-10. 보도 수치이며 이 제품의 결과가 아닙니다.</p>
+</div></section>
 
-<section class="intro" id="intro">
-  <div class="report"><span class="tag">가상 신고 · 12:16 접수</span><b>낚싯배에서 1명 추락</b><span>해운대 남동쪽 약 14 km · 12:00–12:15 사이 추정</span></div>
-  <h1>바다에 사람이 빠졌다.<br>어디부터 봐야 할까?</h1>
-  <p class="lead">신고로 아는 건 대략의 위치와 시각뿐.<br>가정을 바꾼 바다 세 개를 동시에 흘려 봅니다.</p>
-  <ul class="worlds">
-    <li><i style="background:#26e0c6"></i><b>S0 기준안</b><span>반경 250 m</span></li>
-    <li><i style="background:#e9f3f2"></i><b>S1 위치 불확실</b><span>반경 1 km</span></li>
-    <li><i style="background:#7b74ff"></i><b>S2 시각 불확실</b><span>~12:30</span></li>
-  </ul>
-  <button id="intro-run" class="btn primary big">세 바다 동시에 계산</button>
-  <p class="fine">합성 사고 · 공식 수색 안내 아님</p>
-</section>
-<img class="locator" src="assets/korea.svg" alt="한반도 위 사고 위치: 부산 앞바다">
+<section><div class="wrap">
+  <h2>시나리오마다 Daytona sandbox를 하나씩 씁니다.</h2>
+  <p class="sub">같은 엔진에 입자 2,000개와 저장된 해류 예보를 넣고, 시나리오별로 따로 계산합니다.</p>
+  <div class="steps">
+    <div class="step"><h3>신고 접수</h3><p>기준안에 더해 위치를 반경 1 km로 넓힌 경우와 시각을 12:30까지 늦춘 경우를 만듭니다.</p></div>
+    <div class="step hl"><h3>Daytona sandbox 3개</h3><p>시나리오마다 sandbox를 띄워 만들고, 올리고, 계산하고, 받고, 지웁니다. 셋이 동시에 실행됩니다.</p></div>
+    <div class="step"><h3>비교와 요약</h3><p>가장 많이 모인 1 km 칸의 입자 비율을 비교하고, Nosana 모델이 계산된 숫자로만 두 줄 요약을 씁니다.</p></div>
+  </div>
+</div></section>
 
-<section class="card" id="card">
-  <h2>가장 많이 모인 1 km 칸의 입자 비율 <small id="cardsub">계산 전</small></h2>
-  <p class="insight" id="insight" hidden></p>
-  <div class="evals" id="evalseg"><button data-i="0" class="on">13:00</button><button data-i="1">15:00</button><button data-i="2">18:00</button></div>
-  <div class="kpis3" id="kpis"></div>
-  <div class="meta"><span>미확인 <b id="unres">—</b></span></div>
-  <div class="legend small muted"><span><i class="lg-c"></i>최다 1 km 칸</span><span><i class="lg-o"></i>해역 밖 (미확인)</span><span>비율 = 입자 2,000개 중 몫 · 확률 아님</span><a id="dl" href="#" hidden>JSON</a></div>
-  <div id="brief" class="brief" hidden></div>
-  <details class="more"><summary>세부 보기</summary><div class="tw"><table id="detail"></table></div></details>
-</section>
+<section><div class="wrap">
+  <h2>위치 가정만 넓혀도 78%가 31%로 떨어집니다.</h2>
+  <p class="sub">부산 앞바다 가상 사고, 1시간 뒤(13:00 KST) 가장 많이 모인 1 km 칸의 입자 비율입니다.</p>
+  <div class="worlds">
+    <div class="world"><i style="background:#26e0c6"></i><b>S0 기준안</b><span class="pct">78.3%</span><span>반경 250 m · 12:00–12:15</span></div>
+    <div class="world"><i style="background:#e9f3f2"></i><b>S1 위치 불확실</b><span class="pct">31.2%</span><span>반경 1 km</span></div>
+    <div class="world"><i style="background:#7b74ff"></i><b>S2 시각 불확실</b><span class="pct">46.0%</span><span>12:30까지 투입</span></div>
+  </div>
+  <p class="note">입자 비율은 발견·생존 확률이 아닙니다. 해역을 벗어난 입자는 미확인으로 남깁니다.</p>
+</div></section>
 
-<div id="banner" class="banner" hidden></div>
+<section class="cta-end"><div class="wrap">
+  <h2>데모에서 직접 계산해 볼 수 있습니다.</h2>
+  <p class="sub" style="margin-left:auto;margin-right:auto">계산 시작을 누르면 세 시나리오가 동시에 실행됩니다.</p>
+  <div class="ctas"><a class="btn primary" href="app.html">데모 열기</a></div>
+</div></section>
 
-<dialog id="limitsDlg" class="dlg">
-  <h3>이 화면의 한계 · 가정</h3>
-  <ul id="disc">
-    <li>합성 사고 · 실제 사고 재현 아님</li>
-    <li>저장된 예보 · 수신 시각 미확인 (탐침 시작 시각은 별도 표시)</li>
-    <li>입자 비율 ≠ 발견·생존 확률</li>
-    <li>해안 정확도 미검증</li>
-    <li>바람 계수는 보정 안 된 가정값 (사용 시)</li>
-    <li>공식 수색 안내 아님 · 판단은 사람이</li>
-    <li>해류 한 지점 값을 모든 입자에 적용 · 퍼짐은 초기 위치·투입 시각 가정만 반영</li>
-    <li>실제 해안선 미검증 · 입자가 육지를 지날 수 있음</li>
-    <li>요청·반환 위치 약 2.9 km 차이 · 바람·해류 위치도 다름</li>
-  </ul>
-  <div id="prov" class="small muted"></div>
-  <p class="small muted">지형: Copernicus DEM GLO-30 (표시용, 해안선 검증 아님). <span id="dem-attr"></span> 위치 지도: geoBoundaries ADM1 (CC BY 4.0).</p>
-  <form method="dialog"><button class="btn">닫기</button></form>
-</dialog>
-
-<script type="module" src="app.js"></script>
+<footer><div class="wrap">
+  <p>Golden Sea · Daytona HackSprint Seoul 2026-10-18</p>
+  <p>합성 사고이며 공식 수색 안내가 아닙니다. 해류는 저장된 Open-Meteo 예보(해시 고정), 지형은 Copernicus DEM GLO-30, 위치 지도는 geoBoundaries(CC BY 4.0).</p>
+</div></footer>
 </body>
 </html>

@@ -33,7 +33,7 @@ Daytona HackSprint Seoul · 2026-10-18.
 
 ```bash
 # 저장된 예보 2개를 private-inputs/drift-cache-v1/ 에 둔다 (해시 불일치 시 SETUP_BLOCKED)
-python3 server.py                 # http://127.0.0.1:8787  (stdlib only)
+python3 server.py                 # http://127.0.0.1:8787 (랜딩) · /app.html (데모)  (stdlib only)
 python3 -m unittest discover -s tests
 ```
 
