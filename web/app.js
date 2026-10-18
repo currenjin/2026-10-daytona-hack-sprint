@@ -20,9 +20,9 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x05080a);
 stage.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
-const fog3d = new THREE.Fog(0x05080a, 40, 90); scene.fog = fog3d;
+const fog3d = new THREE.Fog(0x05080a, 60, 140); scene.fog = fog3d;
 const persp = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 400);
-persp.position.set(-2, 13, 9.5);
+persp.position.set(-6, 24, 18);
 const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
 ortho.position.set(2.2, 60, 0.4); ortho.up.set(0, 0, -1);
 let camera = persp;
@@ -42,7 +42,7 @@ const grid = new THREE.GridHelper(40, 40, 0x123236, 0x0d2427); grid.position.y =
 // domain box (34.9–35.3, 129.0–129.4)
 {
   const pts = [[129.0, 34.9], [129.4, 34.9], [129.4, 35.3], [129.0, 35.3], [129.0, 34.9]].map(([lo, la]) => new THREE.Vector3(toX(lo), 0.01, toZ(la)));
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0x1d4c50, dashSize: 0.4, gapSize: 0.4 }));
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xb08a3e, dashSize: 0.5, gapSize: 0.35 }));
   line.computeLineDistances(); scene.add(line);
 }
 
@@ -66,7 +66,7 @@ async function loadTerrain() {
     const ix = Math.round(gx / seg * (img.width - 1)), iy = Math.round(gy / seg * (img.height - 1));
     const o = (iy * img.width + ix) * 4, m = px[o] * 256 + px[o + 1], land = px[o + 2] > 0;
     pos.setY(i, land ? 0.05 + m / 1000 * EXAG : -0.3);
-    c.setHSL(0.48, 0.08, land ? 0.09 + Math.min(m / 700, 1) * 0.16 : 0.02); colors.push(c.r, c.g, c.b);
+    c.setHSL(land ? 0.25 : 0.55, land ? 0.18 : 0.3, land ? 0.16 + Math.min(m / 700, 1) * 0.22 : 0.03); colors.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
   scene.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: false })));
@@ -93,13 +93,13 @@ const tex = dotTexture();
 const clouds = {};
 for (const sid of ['S0', 'S1', 'S2']) {
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(2000 * 3), 3));
-  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: COLORS[sid], size: sid === 'S1' ? 0.22 : 0.26, map: tex, transparent: true, depthWrite: false, blending: THREE.NormalBlending, opacity: sid === 'S1' ? 0.35 : 0.8 }));
-  pts.visible = false; scene.add(pts); clouds[sid] = pts;
+  const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: COLORS[sid], size: sid === 'S1' ? 0.3 : 0.34, map: tex, transparent: true, depthWrite: false, blending: THREE.NormalBlending, opacity: sid === 'S1' ? 0.35 : 0.8 }));
+  pts.visible = false; pts.frustumCulled = false; scene.add(pts); clouds[sid] = pts;
 }
 
 const exitGeo = new THREE.BufferGeometry(); exitGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6000 * 3), 3));
-const exits = new THREE.Points(exitGeo, new THREE.PointsMaterial({ color: 0xf2b84b, size: 0.14, map: tex, transparent: true, opacity: 0.55, depthWrite: false }));
-scene.add(exits);
+const exits = new THREE.Points(exitGeo, new THREE.PointsMaterial({ color: 0xf2b84b, size: 0.32, map: tex, transparent: true, opacity: 0.85, depthWrite: false }));
+exits.frustumCulled = false; scene.add(exits);
 
 // top 1 km cell per scenario, centroid trails, place labels
 const cellBoxes = {}, trails = {}, centroids = {};
@@ -111,7 +111,7 @@ for (const sid of ['S0', 'S1', 'S2']) {
   fill.rotation.x = -Math.PI / 2; fill.position.set(0.5, -0.02, -0.5); sq.add(fill);
   const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(37 * 3), 3));
   const tl = new THREE.Line(tg, new THREE.LineBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 0.9 }));
-  tl.visible = false; scene.add(tl); trails[sid] = tl;
+  tl.visible = false; tl.frustumCulled = false; scene.add(tl); trails[sid] = tl;
 }
 function computeCentroids(sid) {
   const r = state.results[sid]; if (!r?.frames) return;
@@ -125,7 +125,7 @@ function computeCentroids(sid) {
   pts.forEach((p, i) => { if (p) last = p; arr[i * 3] = last[0]; arr[i * 3 + 1] = 0.1; arr[i * 3 + 2] = -last[1]; });
   trails[sid].geometry.attributes.position.needsUpdate = true;
 }
-const PLACES = [['해운대', 35.1587, 129.1604], ['오륙도', 35.0917, 129.1278], ['사고 지점', 35.1, 129.3075]];
+const PLACES = [['해운대', 35.1587, 129.1604], ['광안리', 35.1532, 129.1186], ['오륙도', 35.0917, 129.1278], ['기장', 35.2445, 129.2222], ['사고 지점', 35.1, 129.3075], ['시연 해역 경계 · 밖은 미확인', 35.22, 129.4]];
 const labelLayer = document.createElement('div'); labelLayer.className = 'labels'; document.body.appendChild(labelLayer);
 const placeEls = PLACES.map(([n]) => { const e = document.createElement('span'); e.textContent = n; labelLayer.appendChild(e); return e; });
 
@@ -202,6 +202,20 @@ function resize() {
 addEventListener('resize', resize); resize();
 
 let last = performance.now();
+const follow = new THREE.Vector3(2.2, 0, -2.2), _d = new THREE.Vector3();
+function followTarget(f) {
+  let sx = 0, sz = 0, n = 0;
+  for (const sid of ['S0', 'S1', 'S2']) {
+    const r = state.results[sid]; if (!r?.frames) continue;
+    if (state.focus && state.focus !== sid) continue;
+    const F = r.frames[Math.round(f)];
+    for (let k = 0; k < 2000; k += 10) if (F.s[k] === 'A' || F.s[k] === 'O') { sx += F.xy[2 * k]; sz += F.xy[2 * k + 1]; n++; }
+  }
+  if (!n) return;
+  // keep the incident pin in view while the cloud is near it
+  const cx = sx / n / 1000, cy = sz / n / 1000;
+  follow.set(cx, 0, -cy + 0.3);
+}
 function tick(now) {
   const dt = (now - last) / 1000; last = now;
   if (state.playing) {
@@ -210,6 +224,12 @@ function tick(now) {
     setFrame(f);
   }
   const ring = pin.getObjectByName('ring'); const s = 1 + (now / 1000 % 1.6) * 0.8; ring.scale.set(s, s, s); ring.material.opacity = 0.6 * (1 - (now / 1000 % 1.6) / 1.6);
+  if (Object.keys(state.results).length) {
+    followTarget(state.frame);
+    _d.copy(follow).sub(controls.target).multiplyScalar(0.12);
+    controls.target.add(_d); persp.position.add(_d);
+    ortho.position.x += (follow.x - ortho.position.x) * 0.12; ortho.position.z += (follow.z + 2.6 - ortho.position.z) * 0.12;
+  }
   controls.update(); renderer.render(scene, camera); placeLabels();
   requestAnimationFrame(tick);
 }
@@ -253,6 +273,17 @@ function renderCard() {
     const cls = state.focus === sid ? ' on' : (state.focus ? ' dim' : '');
     return `<div class="k${cls}" data-sid="${sid}" role="button" tabindex="0" title="이 시나리오만 지도에서 보기"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${cnt}${st}</div>`;
   }).join('');
+  const ev = ['S0', 'S1', 'S2'].map(sid => state.results[sid]?.evaluations?.[state.evalIdx]);
+  let ins = '';
+  if (ev.every(Boolean)) {
+    if (ev.every(e => e.state_counts.ACTIVE === 0)) ins = '모든 입자가 시연 해역 밖으로 나가 이 시각은 미확인입니다. 숨기지 않고 미확인으로 남깁니다.';
+    else {
+      const [a, b, c] = ev.map(e => e.top_cell_fraction * 100);
+      const same = new Set(ev.map(e => e.top_cell)).size === 1;
+      ins = `기준안은 입자의 ${a.toFixed(0)}%가 한 칸에 모이지만, 신고 위치를 1 km만 넓게 잡으면 ${b.toFixed(0)}%, 빠진 시각을 12:30까지 늦추면 ${c.toFixed(0)}%입니다.${same ? ' 칸은 같아도 쏠림이 크게 다릅니다.' : ' 가장 많이 모인 칸도 달라집니다.'}`;
+    }
+  }
+  $('#insight').textContent = ins; $('#insight').hidden = !ins;
   document.querySelectorAll('#kpis .k').forEach(k => k.onclick = () => {
     state.focus = state.focus === k.dataset.sid ? null : k.dataset.sid; applyFocus(); renderCard();
   });
@@ -306,9 +337,11 @@ function banner(text, kind) {
 
 async function run(scenarios = ['S0', 'S1', 'S2']) {
   $('#runbtn').disabled = true; $('#runpanel').classList.add('busy');
+  $('#intro').classList.add('running');
+  $('#intro-run').textContent = state.executor === 'daytona' ? 'Daytona sandbox 3개에서 동시에 계산 중…' : '이 컴퓨터에서 계산 중… (스폰서 실행 아님)';
   const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source }) });
   const j = await res.json();
-  if (!j.batch_id) { $('#runpanel').classList.remove('busy'); banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
+  if (!j.batch_id) { $('#runpanel').classList.remove('busy'); $('#intro').classList.remove('running'); banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
   banner(null);
   for (const s of scenarios) delete state.results[s];
   renderCard();
@@ -321,7 +354,7 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   Object.assign(state.results, batch.results);
   for (const sid of Object.keys(batch.results)) computeCentroids(sid);
   applyFocus();
-  $('#runpanel').classList.remove('busy');
+  $('#runpanel').classList.remove('busy'); $('#intro').hidden = true; document.body.classList.add('started');
   renderCard(); setFrame(0); state.playing = true; $('#play').textContent = '❚❚';
   const prov = Object.values(batch.results).find(r => r.provenance)?.provenance?.current;
   if (prov) $('#prov').innerHTML = [
@@ -346,6 +379,7 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   }
 }
 $('#runbtn').onclick = () => run();
+$('#intro-run').onclick = () => run();
 $('#executor').onchange = e => { state.executor = e.target.value; note(); };
 function note() {
   const dt = state.config?.executors?.daytona;
@@ -366,6 +400,7 @@ async function init() {
   $('#src-label').textContent = state.source === 'cache' ? '저장된 예보' : '합성 흐름 (UI 개발용)';
   if (!cacheOk) banner('저장된 예보 파일이 없거나 해시가 다릅니다 (SETUP_BLOCKED). 지금은 UI 개발용 합성 흐름으로만 보여 줍니다. 예보가 아닙니다.', 'warn');
   note();
+  $('#intro-run').textContent = dt.available ? '세 바다 동시에 계산 · Daytona sandbox 3개' : '세 바다 동시에 계산 · 로컬 실행';
   renderRows(null); renderCard(); setFrame(0);
 }
 init();

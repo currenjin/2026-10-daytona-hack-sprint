@@ -34,8 +34,23 @@
   <div id="rp-note" class="muted small"></div>
 </aside>
 
+<section class="intro" id="intro">
+  <p class="eyebrow">부산 앞바다 · 가상 사고 · 12:00–12:15 KST</p>
+  <h1>바다에 사람이 빠졌다.<br>어디부터 봐야 할까?</h1>
+  <p class="lead">신고로 아는 건 대략의 위치와 시각뿐입니다. Golden Sea는 그 가정을 바꾼 바다 세 개를 동시에 흘려 보고, 결과가 가정에 얼마나 흔들리는지 보여 줍니다.</p>
+  <ul class="worlds">
+    <li><i style="background:#26e0c6"></i><b>S0 기준안</b><span>신고 위치 반경 250 m · 12:00–12:15</span></li>
+    <li><i style="background:#e9f3f2"></i><b>S1 위치 불확실</b><span>반경 1 km로 넓힘</span></li>
+    <li><i style="background:#7b74ff"></i><b>S2 시각 불확실</b><span>12:30까지 늦춤</span></li>
+  </ul>
+  <button id="intro-run" class="btn primary big">세 바다 동시에 계산</button>
+  <p class="fine">입자 2,000개 · 저장된 해류 예보 · 합성 사고, 공식 수색 안내 아님</p>
+</section>
+<img class="locator" src="assets/korea.svg" alt="한반도 위 사고 위치: 부산 앞바다">
+
 <section class="card" id="card">
   <h2>가장 많이 모인 1 km 칸의 입자 비율 <small id="cardsub">계산 전</small></h2>
+  <p class="insight" id="insight" hidden></p>
   <div class="evals" id="evalseg"><button data-i="0" class="on">13:00</button><button data-i="1">15:00</button><button data-i="2">18:00</button></div>
   <div class="kpis3" id="kpis"></div>
   <div class="meta"><span>미확인 (데이터 없음 + 해역 밖) <b id="unres">—</b></span></div>
