@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const SIDS = ['S5', 'S0', 'S2', 'S1'];
-const COLORS = { S0: 0x26e0c6, S1: 0xe9f3f2, S2: 0x7b74ff, S5: 0xff7eb6 };
-const CSS_COLORS = { S0: '#26e0c6', S1: '#e9f3f2', S2: '#7b74ff', S5: '#ff7eb6' };
-const LABELS = { S5: '15분 일찍 빠졌다면', S0: '신고 시각', S2: '15분 늦게 빠졌다면', S1: '신고 위치 1 km 반경' };
+const SIDS = ['S6', 'S5', 'S0', 'S2', 'S7', 'S8', 'S1'];
+const COLORS = { S6: 0xff5a7a, S5: 0xff9ec4, S0: 0x26e0c6, S2: 0x7b74ff, S7: 0xb592ff, S8: 0x8fd3ff, S1: 0xe9f3f2 };
+const CSS_COLORS = { S6: '#ff5a7a', S5: '#ff9ec4', S0: '#26e0c6', S2: '#7b74ff', S7: '#b592ff', S8: '#8fd3ff', S1: '#e9f3f2' };
+const LABELS = { S6: '30분 일찍 빠졌다면', S5: '15분 일찍 빠졌다면', S0: '신고 시각', S2: '15분 늦게 빠졌다면', S7: '30분 늦게 빠졌다면', S8: '신고 위치 500 m 반경', S1: '신고 위치 1 km 반경' };
 const R = 6371000, LAT0 = 35.1, LON0 = 129.3, COS = Math.cos(LAT0 * Math.PI / 180);
 const toX = lon => (lon - LON0) * Math.PI / 180 * R * COS / 1000;   // km east
 const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -north
@@ -115,7 +115,7 @@ for (const sid of SIDS) {
   pts.visible = false; pts.frustumCulled = false; scene.add(pts); clouds[sid] = pts;
 }
 
-const exitGeo = new THREE.BufferGeometry(); exitGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(8000 * 3), 3));
+const exitGeo = new THREE.BufferGeometry(); exitGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(14000 * 3), 3));
 const exits = new THREE.Points(exitGeo, new THREE.PointsMaterial({ color: 0xf2b84b, size: 0.32, map: tex, transparent: true, opacity: 0.85, depthWrite: false }));
 exits.frustumCulled = false; scene.add(exits);
 
@@ -124,7 +124,7 @@ const cellBoxes = {}, trails = {}, centroids = {};
 for (const sid of SIDS) {
   const sq = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[0, 0], [1, 0], [1, 1], [0, 1]].map(([a, b]) => new THREE.Vector3(a, 0, -b))),
     new THREE.LineBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 1 }));
-  sq.position.y = 0.08 + { S0: 0.02, S1: 0.01, S2: 0.03, S5: 0.04 }[sid]; sq.visible = false; scene.add(sq); cellBoxes[sid] = sq;
+  sq.position.y = 0.08 + 0.01 * SIDS.indexOf(sid); sq.visible = false; scene.add(sq); cellBoxes[sid] = sq;
   const fill = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
   fill.rotation.x = -Math.PI / 2; fill.position.set(0.5, -0.02, -0.5); sq.add(fill);
   const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(37 * 3), 3));
@@ -226,7 +226,7 @@ function setFrame(f) {
     const F = r.frames[Math.round(f)];
     for (let k = 0; k < 2000; k++) if (F.s[k] === 'O') { ea[n * 3] = F.xy[2 * k] / 1000; ea[n * 3 + 1] = 0.05; ea[n * 3 + 2] = -F.xy[2 * k + 1] / 1000; n++; }
   }
-  for (let k = n; k < 8000; k++) ea[k * 3 + 1] = -50;
+  for (let k = n; k < 14000; k++) ea[k * 3 + 1] = -50;
   exitGeo.attributes.position.needsUpdate = true;
   for (const sid of SIDS) {
     const tl = trails[sid]; tl.visible = !!centroids[sid];

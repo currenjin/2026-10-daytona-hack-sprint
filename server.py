@@ -146,7 +146,7 @@ class Handler(SimpleHTTPRequestHandler):
         except json.JSONDecodeError:
             return self._json({"status": "INPUT_ERROR", "error": "invalid JSON"}, 400)
         if self.path == "/api/run":
-            scen = body.get("scenarios") or ["S5", "S0", "S2", "S1"]
+            scen = body.get("scenarios") or ["S6", "S5", "S0", "S2", "S7", "S8", "S1"]
             ex = body.get("executor", "local")
             src = body.get("source", "cache")
             inc = body.get("incident", "A")

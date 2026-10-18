@@ -56,6 +56,9 @@ SCENARIOS = {
     "S4": Scenario("S4", "바람 계수 0.03", 250, LATEST, 0.03, "alpha", required=False),
     # demo addition outside the frozen criteria: fell up to 15 minutes earlier
     "S5": Scenario("S5", "15분 일찍", 250, LATEST, 0.0, "earliest_release", required=False, earliest_shift_min=-15),
+    "S6": Scenario("S6", "30분 일찍", 250, LATEST, 0.0, "earliest_release", required=False, earliest_shift_min=-30),
+    "S7": Scenario("S7", "30분 늦게", 250, datetime(2026, 10, 18, 12, 45, tzinfo=KST), 0.0, "latest_release", required=False),
+    "S8": Scenario("S8", "반경 500 m", 500, LATEST, 0.0, "radius_m", required=False),
 }
 
 

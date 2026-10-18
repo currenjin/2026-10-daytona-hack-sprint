@@ -66,10 +66,10 @@ section{border-top:1px solid var(--rule);padding:96px 0}
   <div class="meta"><span><b>부산 앞바다</b> 가상 사고</span><span><b>Daytona</b> sandbox</span><span><b>Nosana</b> 요약</span><span>Daytona HackSprint Seoul · 2026.10.18</span></div>
   <h1>해상 실종자<br>위치 추정</h1>
   <div class="intro">
-    <p>신고 하나로 표류 위치를 여러 경우로 계산합니다. 빠진 시각 ±15분과 위치 반경 1 km를 함께 봅니다.</p>
+    <p>신고 하나로 표류 위치를 일곱 가지 경우로 계산합니다. 빠진 시각 ±30분과 위치 반경 1 km까지 함께 봅니다.</p>
     <div class="cta"><a class="btn" href="app.html">데모 열기 →</a><a class="link" href="https://github.com/currenjin/2026-10-daytona-hack-sprint">GitHub에서 코드 보기</a></div>
   </div>
-  <figure><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"><figcaption>해운대 남동쪽 가상 신고, 1시간 뒤 결과. Daytona sandbox 4개에서 계산하고 Nosana 모델이 요약했습니다.</figcaption></figure>
+  <figure><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"><figcaption>해운대 남동쪽 가상 신고, 1시간 뒤 결과. Daytona sandbox 7개에서 계산하고 Nosana 모델이 요약했습니다.</figcaption></figure>
 </div>
 
 <section id="problem"><div class="wrap">
@@ -88,19 +88,22 @@ section{border-top:1px solid var(--rule);padding:96px 0}
   <div class="label">방법</div>
   <div class="how">
     <div><div class="k">01</div><h3>신고 입력</h3><p>위치와 빠진 시각 범위</p></div>
-    <div><div class="k">02</div><h3>Daytona sandbox 4개</h3><p>시각 ±15분, 위치 반경 1 km를 동시에 계산. 각 6~10초</p></div>
+    <div><div class="k">02</div><h3>Daytona sandbox 7개</h3><p>빠진 시각 5가지, 위치 반경 3가지를 동시에 계산. 각 약 8~10초</p></div>
     <div><div class="k">03</div><h3>비교 · 요약 · 공유</h3><p>Nosana 두 줄 요약, 출동팀·상황실 공유 문구</p></div>
   </div>
 </div></section>
 
 <section id="result"><div class="wrap">
   <div class="split">
-    <div class="prose"><div class="label">결과 · 1시간 뒤</div><h2>15분, 1 km 차이로 31%에서 81%까지 갈립니다.</h2><p>표류 경로 경우의 수 2,000가지 중 같은 1 km 칸에 모인 비율입니다. 확률은 아닙니다.</p></div>
+    <div class="prose"><div class="label">결과 · 1시간 뒤</div><h2>시각과 반경에 따라 31%에서 81%까지 갈립니다.</h2><p>표류 경로 경우의 수 2,000가지 중 같은 1 km 칸에 모인 비율입니다. 확률은 아닙니다.</p></div>
     <div class="res">
-      <div class="row"><div class="n">15분 일찍 빠졌다면<span>11:45–12:15</span></div><div class="bar"><i style="width:80.7%;background:#ff7eb6"></i></div><div class="v">80.7%</div></div>
-      <div class="row"><div class="n">신고 시각<span>12:00–12:15</span></div><div class="bar"><i style="width:78.35%;background:var(--teal)"></i></div><div class="v">78.3%</div></div>
-      <div class="row"><div class="n">15분 늦게 빠졌다면<span>12:00–12:30</span></div><div class="bar"><i style="width:45.95%;background:var(--indigo)"></i></div><div class="v">46.0%</div></div>
-      <div class="row"><div class="n">신고 위치 1 km 반경<span>12:00–12:15</span></div><div class="bar"><i style="width:31.2%;background:var(--white)"></i></div><div class="v">31.2%</div></div>
+      <div class="row"><div class="n">30분 일찍 빠졌다면<span>11:30–12:15</span></div><div class="bar"><i style="width:56.9%;background:#ff5a7a"></i></div><div class="v">56.9%</div></div>
+      <div class="row"><div class="n">15분 일찍 빠졌다면<span>11:45–12:15</span></div><div class="bar"><i style="width:80.7%;background:#ff9ec4"></i></div><div class="v">80.7%</div></div>
+      <div class="row"><div class="n">신고 시각<span>12:00–12:15 · 반경 250 m</span></div><div class="bar"><i style="width:78.35%;background:#26e0c6"></i></div><div class="v">78.3%</div></div>
+      <div class="row"><div class="n">15분 늦게 빠졌다면<span>12:00–12:30</span></div><div class="bar"><i style="width:45.95%;background:#7b74ff"></i></div><div class="v">46.0%</div></div>
+      <div class="row"><div class="n">30분 늦게 빠졌다면<span>12:00–12:45</span></div><div class="bar"><i style="width:47.25%;background:#b592ff"></i></div><div class="v">47.3%</div></div>
+      <div class="row"><div class="n">신고 위치 500 m 반경<span>12:00–12:15</span></div><div class="bar"><i style="width:61.35%;background:#8fd3ff"></i></div><div class="v">61.4%</div></div>
+      <div class="row"><div class="n">신고 위치 1 km 반경<span>12:00–12:15</span></div><div class="bar"><i style="width:31.2%;background:#e9f3f2"></i></div><div class="v">31.2%</div></div>
     </div>
   </div>
 </div></section>
