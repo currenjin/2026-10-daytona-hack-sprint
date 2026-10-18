@@ -14,7 +14,7 @@ A report gives only a rough place and time, so Golden Sea computes seven cases a
 | **Nosana** | `qwen/qwen3.8-27b` on Nosana inference does three jobs: turns the raw report (call transcript) into the form fields, writes a two-line summary, and drafts the dispatch message for rescue crews and the control room. Numbers always come from the engine; about 3–8 s per call. |
 | Limits | Simulated reports, cached Open-Meteo current forecast (SHA-256 pinned), one current value per incident, coastline accuracy unverified. Shares are not probabilities. Not official search guidance. The frozen verification criteria cover the first incident (S0–S2, 34.9–35.3°N, 129.0–129.4°E); the added time and radius cases, incidents 2–3 and the widened demo area are marked `PRESET_NOT_IN_FROZEN_CRITERIA`. |
 
-Built at Daytona HackSprint Seoul, 2026-10-18.
+Built at Daytona HackSprint Seoul, 2026-10-18. **1st place.**
 
 ---
 
