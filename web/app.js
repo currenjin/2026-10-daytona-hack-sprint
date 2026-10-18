@@ -480,7 +480,6 @@ $('#intro-fill').onclick = async () => {
     for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(res => setTimeout(res, 12)); }
     el.classList.add('filled');
   }
-  document.querySelectorAll('#worlds li').forEach(li => li.classList.add('on'));
   $('#unverified').hidden = r.inc === 'A';
   rIdx++;
   $('#intro-run').disabled = false; btn.disabled = false;
