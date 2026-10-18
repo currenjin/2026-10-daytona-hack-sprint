@@ -1,5 +1,25 @@
 # Golden Sea
 
+**Not one predicted line, but the whole plausible sea.**
+When someone falls overboard, Golden Sea runs several "what-if" worlds side by side (same particles, one assumption changed each) and shows where 2,000 drift particles gather over the next six hours.
+
+![Golden Sea running on Daytona with a Nosana summary](docs/screenshot.png)
+
+| | |
+| --- | --- |
+| Problem | Official drift forecasts are shown as one line. Since 2021, 165 of 256 sea and coastal missing-person cases in Korea are still unresolved (Korea Coast Guard data as reported by Munhwa Ilbo); in one Busan tugboat case the person was found about 100 km away in Pohang (Nocut News). |
+| What it does | Synthetic incident off Busan (35.1°N, 129.3°E, 12:00–12:15 KST). S0 baseline (250 m radius), S1 radius 1 km, S2 release until 12:30. 6-hour playback in 3D/2D, the share of particles in the densest 1 km cell at 13:00 / 15:00 / 18:00. |
+| Result (stored forecast) | Densest 1 km cell at 13:00: S0 78.4%, S1 31.2%, S2 46.0%. By 18:00 all particles leave the demo domain and are shown as unresolved, not as 0. |
+| **Daytona** | Each scenario runs in its own Daytona sandbox: create → upload engine, contracts and cached forecast → run → download result → delete. Measured: 3 sandboxes in parallel, about 8 s each (create 1.2–1.6 s, upload ~3 s, compute ~0.9 s, download ~1.4 s, delete ~0.2 s). |
+| **Nosana** | The result is summarised by `qwen/qwen3.8-27b` on Nosana inference (OpenAI-compatible), about 3 s, prompted to reuse computed numbers only and never call particle shares "probabilities". |
+| Honesty | Synthetic incident, cached Open-Meteo forecast (SHA-256 pinned), single-point uniform current, coastline and surface-current accuracy unverified. Not official search guidance. |
+
+Built at Daytona HackSprint Seoul, 2026-10-18.
+
+---
+
+## 한국어
+
 바다에 사람이 떨어졌을 때, 하나의 예측선 대신 **가정을 바꾼 여러 세계**를 동시에 돌려 입자가 어디로 퍼지는지 비교합니다.
 Daytona HackSprint Seoul · 2026-10-18.
 
