@@ -63,13 +63,13 @@ section{border-top:1px solid var(--rule);padding:96px 0}
     <div class="navlinks"><a href="#problem">문제</a><a href="#how">방법</a><a href="#result">결과</a><a class="go" href="app.html">데모 →</a></div>
   </nav>
 
-  <div class="meta"><span><b>부산 앞바다</b> 가상 사고</span><span><b>Daytona</b> sandbox</span><span><b>Nosana</b> 요약</span><span>Daytona HackSprint Seoul · 2026.10.18</span></div>
+  <div class="meta"><span><b>부산 앞바다</b> 가상 사고</span><span><b>Daytona</b> sandbox</span><span><b>Nosana</b> 신고 정리 · 요약 · 공유 문구</span><span>Daytona HackSprint Seoul · 2026.10.18</span></div>
   <h1>해상 실종자<br>위치 추정</h1>
   <div class="intro">
     <p>신고 하나로 표류 위치를 일곱 가지 경우로 계산합니다. 빠진 시각 ±30분과 위치 반경 1 km까지 함께 봅니다.</p>
     <div class="cta"><a class="btn" href="app.html">데모 열기 →</a><a class="link" href="https://github.com/currenjin/2026-10-daytona-hack-sprint">GitHub에서 코드 보기</a></div>
   </div>
-  <figure><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"><figcaption>해운대 남동쪽 가상 신고, 1시간 뒤 결과. Daytona sandbox 7개에서 계산하고 Nosana 모델이 요약했습니다.</figcaption></figure>
+  <figure><img src="assets/hero.png" alt="Golden Sea 화면: 부산 앞바다 가상 사고의 세 시나리오 비교"><figcaption>해운대 남동쪽 가상 신고, 1시간 뒤 결과. Daytona sandbox 7개에서 계산하고, Nosana 모델이 신고를 정리하고 요약했습니다.</figcaption></figure>
 </div>
 
 <section id="problem"><div class="wrap">
@@ -87,9 +87,9 @@ section{border-top:1px solid var(--rule);padding:96px 0}
 <section id="how"><div class="wrap">
   <div class="label">방법</div>
   <div class="how">
-    <div><div class="k">01</div><h3>신고 입력</h3><p>위치와 빠진 시각 범위</p></div>
+    <div><div class="k">01</div><h3>신고 정리</h3><p>Nosana 모델이 신고 원문에서 위치·시각·오차를 뽑아 양식을 채웁니다</p></div>
     <div><div class="k">02</div><h3>Daytona sandbox 7개</h3><p>빠진 시각 5가지, 위치 반경 3가지를 동시에 계산. 각 약 8~10초</p></div>
-    <div><div class="k">03</div><h3>비교 · 요약 · 공유</h3><p>Nosana 두 줄 요약, 출동팀·상황실 공유 문구</p></div>
+    <div><div class="k">03</div><h3>요약 · 공유 문구</h3><p>Nosana 모델이 계산된 숫자로만 요약과 출동팀·상황실 공유 문구를 씁니다</p></div>
   </div>
 </div></section>
 
