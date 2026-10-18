@@ -1,0 +1,17 @@
+{
+ "bbox_lon_lat": [
+  124.5,
+  33.0,
+  130.0,
+  38.7
+ ],
+ "size": [
+  1024,
+  1024
+ ],
+ "max_m": 1824,
+ "encoding": "height_m = R*256 + G; B=255 where land",
+ "source": "Copernicus DEM GLO-90 via AWS Open Data (copernicus-dem-90m)",
+ "attribution": "Produced using Copernicus WorldDEM-90 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved.",
+ "note": "Display terrain only."
+}

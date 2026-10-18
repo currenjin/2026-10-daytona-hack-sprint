@@ -49,16 +49,15 @@ const grid = new THREE.GridHelper(40, 40, 0x123236, 0x0d2427); grid.position.y =
 }
 
 // terrain from Copernicus DEM heightmap
-async function loadTerrain() {
-  const meta = await (await fetch('assets/terrain.json')).json();
-  $('#dem-attr').textContent = meta.attribution;
-  const img = new Image(); img.src = 'assets/terrain.png'; await img.decode();
+async function loadTerrain(name = 'terrain', seg = 255, yOff = 0, hole = null) {
+  const meta = await (await fetch(`assets/${name}.json`)).json();
+  if (name === 'terrain') $('#dem-attr').textContent = meta.attribution;
+  const img = new Image(); img.src = `assets/${name}.png`; await img.decode();
   const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
   const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0);
   const px = ctx.getImageData(0, 0, img.width, img.height).data;
   const [lo0, la0, lo1, la1] = meta.bbox_lon_lat;
   const w = toX(lo1) - toX(lo0), h = toZ(la0) - toZ(la1);
-  const seg = 255;
   const geo = new THREE.PlaneGeometry(w, h, seg, seg); geo.rotateX(-Math.PI / 2);
   geo.translate((toX(lo0) + toX(lo1)) / 2, 0, (toZ(la0) + toZ(la1)) / 2);
   const pos = geo.attributes.position, colors = [];
@@ -67,7 +66,9 @@ async function loadTerrain() {
     const gx = i % (seg + 1), gy = Math.floor(i / (seg + 1));
     const ix = Math.round(gx / seg * (img.width - 1)), iy = Math.round(gy / seg * (img.height - 1));
     const o = (iy * img.width + ix) * 4, m = px[o] * 256 + px[o + 1], land = px[o + 2] > 0;
-    pos.setY(i, land ? 0.05 + m / 1000 * EXAG : -0.3);
+    const lon = lo0 + gx / seg * (lo1 - lo0), lat = la1 - gy / seg * (la1 - la0);
+    const inHole = hole && lon > hole[0] && lon < hole[2] && lat > hole[1] && lat < hole[3];
+    pos.setY(i, inHole ? -0.6 : (land ? 0.05 + m / 1000 * EXAG + yOff : -0.3));
     c.setHSL(land ? 0.25 : 0.55, land ? 0.18 : 0.3, land ? 0.16 + Math.min(m / 700, 1) * 0.22 : 0.03); colors.push(c.r, c.g, c.b);
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
@@ -507,7 +508,7 @@ function note() {
 }
 
 async function init() {
-  await loadTerrain(); loadKorea();
+  await loadTerrain(); loadTerrain('korea_terrain', 511, -0.08, [128.96, 34.86, 129.44, 35.34]);
   const cfg = await (await fetch('/api/config')).json(); state.config = cfg;
   if (cfg.disclosures) $('#disc').innerHTML = cfg.disclosures.map(d => `<li>${d.ko}</li>`).join('');
   const dt = cfg.executors.daytona;
