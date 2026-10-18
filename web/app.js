@@ -276,11 +276,11 @@ function renderCard() {
   const ev = ['S0', 'S1', 'S2'].map(sid => state.results[sid]?.evaluations?.[state.evalIdx]);
   let ins = '';
   if (ev.every(Boolean)) {
-    if (ev.every(e => e.state_counts.ACTIVE === 0)) ins = '모든 입자가 시연 해역 밖으로 나가 이 시각은 미확인입니다. 숨기지 않고 미확인으로 남깁니다.';
+    if (ev.every(e => e.state_counts.ACTIVE === 0)) ins = '모든 입자가 해역 밖 · 미확인으로 남깁니다';
     else {
       const [a, b, c] = ev.map(e => e.top_cell_fraction * 100);
       const same = new Set(ev.map(e => e.top_cell)).size === 1;
-      ins = `기준안은 입자의 ${a.toFixed(0)}%가 한 칸에 모이지만, 신고 위치를 1 km만 넓게 잡으면 ${b.toFixed(0)}%, 빠진 시각을 12:30까지 늦추면 ${c.toFixed(0)}%입니다.${same ? ' 칸은 같아도 쏠림이 크게 다릅니다.' : ' 가장 많이 모인 칸도 달라집니다.'}`;
+      ins = `가정 하나에 ${a.toFixed(0)}% → ${b.toFixed(0)}%${same ? '' : ' · 최다 칸도 달라짐'}`;
     }
   }
   $('#insight').textContent = ins; $('#insight').hidden = !ins;
@@ -290,7 +290,7 @@ function renderCard() {
   updateCells();
   $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => {
     const e = state.results[sid]?.evaluations?.[state.evalIdx];
-    return e ? `${sid} ${e.unresolved_count}/${e.n}개 ${pct(e.unresolved_fraction)}` : `${sid} —`;
+    return e ? `${sid} ${e.unresolved_count}/${e.n}` : `${sid} —`;
   }).join(' · ');
   const rows = ['S0', 'S1', 'S2'].map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx]; const sc = r?.scenario || {};
@@ -338,7 +338,7 @@ function banner(text, kind) {
 async function run(scenarios = ['S0', 'S1', 'S2']) {
   $('#runbtn').disabled = true; $('#runpanel').classList.add('busy');
   $('#intro').classList.add('running');
-  $('#intro-run').textContent = state.executor === 'daytona' ? 'Daytona sandbox 3개에서 동시에 계산 중…' : '이 컴퓨터에서 계산 중… (스폰서 실행 아님)';
+  $('#intro-run').textContent = state.executor === 'daytona' ? 'Daytona sandbox 3개 동시 계산 중…' : '로컬 계산 중… (스폰서 실행 아님)';
   const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source }) });
   const j = await res.json();
   if (!j.batch_id) { $('#runpanel').classList.remove('busy'); $('#intro').classList.remove('running'); banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
@@ -400,7 +400,7 @@ async function init() {
   $('#src-label').textContent = state.source === 'cache' ? '저장된 예보' : '합성 흐름 (UI 개발용)';
   if (!cacheOk) banner('저장된 예보 파일이 없거나 해시가 다릅니다 (SETUP_BLOCKED). 지금은 UI 개발용 합성 흐름으로만 보여 줍니다. 예보가 아닙니다.', 'warn');
   note();
-  $('#intro-run').textContent = dt.available ? '세 바다 동시에 계산 · Daytona sandbox 3개' : '세 바다 동시에 계산 · 로컬 실행';
+  $('#intro-run').textContent = dt.available ? '계산 시작 · Daytona sandbox 3개' : '계산 시작 · 로컬';
   renderRows(null); renderCard(); setFrame(0);
 }
 init();

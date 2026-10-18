@@ -104,7 +104,9 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{te
 .intro .fine{margin:10px 0 0;font-size:12px;color:var(--dim);text-align:center}
 .intro.running #intro-run{animation:pulse .8s infinite alternate;pointer-events:none}
 body:not(.started) .card{display:none}
-.insight{margin:0 0 10px;font-size:16px;font-weight:600;line-height:1.45;color:#dff9f4;word-break:keep-all}
+.insight{margin:0 0 10px;font-size:20px;font-weight:600;line-height:1.45;color:#dff9f4;word-break:keep-all}
 .locator{position:fixed;left:20px;bottom:20px;width:120px;opacity:.9;pointer-events:none}
 @media (max-width:900px){.locator{display:none}.intro{top:auto;bottom:12px;transform:translateX(-50%)}.intro h1{font-size:22px}}
 .labels{z-index:1}.card,.runpanel,.brand-card,.pill,.intro,.banner{z-index:3}
+.report{display:grid;gap:3px;margin:0 0 16px;padding:12px 14px;border-radius:12px;background:rgba(242,184,75,.08);border:1px solid rgba(242,184,75,.4)}
+.report .tag{font-size:12px;color:var(--amber);font-weight:600}.report b{font-size:17px}.report span:last-child{font-size:13px;color:var(--sub)}
