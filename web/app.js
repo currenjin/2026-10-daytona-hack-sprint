@@ -307,15 +307,15 @@ function shareText() {
   L.push('신고 12:16 · 낚싯배 승선자 1명 추락 · 35.1000° N, 129.3000° E (해운대 남동쪽 약 14 km) · 12:00~12:15 추정');
   L.push('');
   for (let ei = 0; ei < 3; ei++) {
-    L.push(`${at[ei]} KST 표류 경로가 가장 많이 모인 1 km 칸`);
+    L.push(`${at[ei]} KST 표류 경로 경우의 수가 가장 많이 모인 1 km 칸`);
     for (const sid of ['S0', 'S1', 'S2']) {
       const e = state.results[sid]?.evaluations?.[ei];
       if (!e) { L.push(`  ${LABELS[sid]}: 결과 없음`); continue; }
-      L.push(e.state_counts.ACTIVE === 0 ? `  ${LABELS[sid]}: 모든 경로 해역 밖 · 미확인` : `  ${LABELS[sid]}: ${cellCenter(e.top_cell)} 중심 · 경로 ${(e.top_cell_fraction * 100).toFixed(1)}%`);
+      L.push(e.state_counts.ACTIVE === 0 ? `  ${LABELS[sid]}: 모든 경로 해역 밖 · 미확인` : `  ${LABELS[sid]}: ${cellCenter(e.top_cell)} 중심 · ${(e.top_cell_fraction * 100).toFixed(1)}%`);
     }
   }
   L.push('');
-  L.push('비율은 표류 경로 2,000개 중 몫이며 발견·생존 확률이 아닙니다. 공식 수색 지시가 아니며 판단은 상황실이 합니다.');
+  L.push('비율은 표류 경로 경우의 수 2,000가지 중 몫이며 발견·생존 확률이 아닙니다. 공식 수색 지시가 아니며 판단은 상황실이 합니다.');
   L.push('해류: 저장된 Open-Meteo 예보 · 계산: ' + (Object.values(state.results)[0]?.executor === 'daytona' ? 'Daytona sandbox' : '로컬'));
   return L.join('\n');
 }
@@ -337,7 +337,7 @@ function renderCard() {
     const c = e?.state_counts || {}, n = e?.n || 2000;
     const why = c.OUT_OF_DOMAIN === n ? '모두 해역 밖' : c.DATA_MISSING === n ? '모두 데이터 없음' : '계산 중인 경로 없음';
     const st = r && !r.evaluations ? `<span class="st">${r.status}</span>` : (allOut ? `<span class="st">${why} · 미확인 ${pct(e.unresolved_fraction)}</span>` : '');
-    const cnt = e && !allOut ? `<span class="cnt">${Math.round(e.top_cell_fraction * n).toLocaleString()} / ${n.toLocaleString()} 경로</span><span class="bar"><span style="width:${e.top_cell_fraction * 100}%;background:${CSS_COLORS[sid]}"></span></span>` : '';
+    const cnt = e && !allOut ? `<span class="cnt">${Math.round(e.top_cell_fraction * n).toLocaleString()} / ${n.toLocaleString()}가지</span><span class="bar"><span style="width:${e.top_cell_fraction * 100}%;background:${CSS_COLORS[sid]}"></span></span>` : '';
     const cls = state.focus === sid ? ' on' : (state.focus ? ' dim' : '');
     return `<div class="k${cls}" data-sid="${sid}" role="button" tabindex="0" title="이 시나리오만 지도에서 보기"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${cnt}${st}</div>`;
   }).join('');
