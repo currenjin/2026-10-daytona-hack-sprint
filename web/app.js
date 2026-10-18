@@ -38,7 +38,7 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(-20, 30,
 
 // sea
 const sea = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshStandardMaterial({ color: 0x07161a, roughness: 0.6, metalness: 0.2 }));
-sea.rotation.x = -Math.PI / 2; scene.add(sea);
+sea.rotation.x = -Math.PI / 2; sea.position.y = -0.02; scene.add(sea);
 const grid = new THREE.GridHelper(40, 40, 0x123236, 0x0d2427); grid.position.y = 0.002; scene.add(grid);
 
 // domain box (34.9–35.3, 129.0–129.4)
@@ -77,14 +77,14 @@ async function loadTerrain() {
 // whole-country land outline under the detailed Busan terrain
 async function loadKorea() {
   const k = await (await fetch('assets/korea.json')).json();
-  const mat = new THREE.MeshStandardMaterial({ color: 0x2b3a33, roughness: 1 });
+  const mat = new THREE.MeshBasicMaterial({ color: 0x33443b, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 });
   const edge = new THREE.LineBasicMaterial({ color: 0x4e6b60 });
   for (const ring of k.polygons) {
     const shape = new THREE.Shape(ring.map(([lo, la]) => new THREE.Vector2(toX(lo), -toZ(la))));
     const geo = new THREE.ShapeGeometry(shape); geo.rotateX(-Math.PI / 2);
-    const m = new THREE.Mesh(geo, mat); m.position.y = -0.05; scene.add(m);
+    const m = new THREE.Mesh(geo, mat); m.position.y = 0.004; scene.add(m);
     const pts = ring.map(([lo, la]) => new THREE.Vector3(toX(lo), 0.0, toZ(la)));
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edge));
+    const ln = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edge); ln.position.y = 0.006; scene.add(ln);
   }
 }
 
