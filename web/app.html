@@ -13,7 +13,7 @@
 <header class="brand-card">
   <div class="brand"><svg width="26" height="26" viewBox="0 0 28 28" aria-hidden="true"><path d="M5 16c3-3 6-3 9 0s6 3 9 0" stroke="#26e0c6" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M5 11c3-3 6-3 9 0s6 3 9 0" stroke="#7b74ff" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
     <div><b>Golden <i>Sea</i></b><small>표류 가정 비교</small></div></div>
-  <div class="loc"><span class="pin"></span><div><div class="t">부산 앞바다 · 가상 사고</div><div class="c">35.1000° N · 129.3000° E · 12:00–12:15 KST</div></div></div>
+  <div class="loc"><span class="pin"></span><div><div class="t" id="cur-what">신고 대기</div><div class="c" id="cur-meta">부산 앞바다 · 가상 사고</div></div></div>
   <button class="info" id="infobtn" type="button"><span>ⓘ</span> 한계와 가정 · 합성 사고, 공식 수색 안내 아님</button>
 </header>
 
@@ -29,42 +29,38 @@
   <ul id="runrows"></ul>
   <div class="rp-act">
     <select id="executor" aria-label="실행 위치"></select>
-    <button id="runbtn" class="btn primary">S0–S2 계산</button>
+    <button id="runbtn" class="btn primary">추정 위치 계산</button>
   </div>
   <div id="rp-note" class="muted small"></div>
 </aside>
 
 <section class="intro" id="intro">
-  <div class="ihead"><span class="tag">가상 신고 · 12:16 접수</span><span class="fine">합성 사고 · 공식 수색 안내 아님</span></div>
+  <div class="ihead"><span class="tag" id="r-tag">가상 신고 대기</span><span class="fine">합성 사고 · 공식 수색 안내 아님</span></div>
   <h1>신고 내용을 입력합니다</h1>
   <form id="report" autocomplete="off">
+    <label>접수<input id="f-when" readonly placeholder="—"></label>
+    <label>신고자<input id="f-who" readonly placeholder="—"></label>
     <label class="wide">신고 내용<input id="f-what" readonly placeholder="—"></label>
-    <label>마지막 위치<input id="f-pos" readonly placeholder="—"></label>
-    <label>기준 지점<input id="f-ref" readonly placeholder="—"></label>
-    <label>추정 시각 (KST)<input id="f-time" readonly placeholder="—"></label>
+    <label>위치<input id="f-pos" readonly placeholder="—"></label>
     <label>위치 오차<input id="f-err" readonly placeholder="—"></label>
+    <label class="wide">추정 시각 (KST)<input id="f-time" readonly placeholder="—"></label>
   </form>
-  <div class="derived" id="derived" hidden>
-    <p>신고만으로는 정확한 위치와 시각을 알 수 없어서, 아래 셋을 함께 계산합니다.</p>
-    <ul class="worlds">
-      <li><i style="background:#26e0c6"></i><b>S0 기준안</b><span>신고 그대로</span></li>
-      <li><i style="background:#e9f3f2"></i><b>S1 위치 불확실</b><span>반경 1 km</span></li>
-      <li><i style="background:#7b74ff"></i><b>S2 시각 불확실</b><span>~12:30</span></li>
-    </ul>
-  </div>
-  <button id="intro-fill" class="btn primary big" type="button">신고 내용 입력</button>
-  <button id="intro-run" class="btn primary big" type="button" hidden>계산 시작</button>
+  <ul class="worlds" id="worlds">
+    <li data-w="0"><i style="background:#26e0c6"></i><b>신고 시점</b><span>대기</span></li>
+    <li data-w="1"><i style="background:#e9f3f2"></i><b>신고 기준 1 km 반경</b><span>대기</span></li>
+    <li data-w="2"><i style="background:#7b74ff"></i><b>신고 ~12:30</b><span>대기</span></li>
+  </ul>
+  <div class="iact"><button id="intro-fill" class="btn big" type="button">신고 내용 입력</button><button id="intro-run" class="btn primary big" type="button" disabled>추정 위치 계산</button></div>
   <p class="fine">시연은 저장된 해류 예보가 있는 이 지점 한 곳만 계산합니다.</p>
 </section>
 <img class="locator" src="assets/korea.svg" alt="한반도 위 사고 위치: 부산 앞바다">
 
 <section class="card" id="card">
-  <h2>가장 많이 모인 1 km 칸의 입자 비율 <small id="cardsub">계산 전</small></h2>
-  <p class="insight" id="insight" hidden></p>
-  <div class="evals" id="evalseg"><button data-i="0" class="on">13:00</button><button data-i="1">15:00</button><button data-i="2">18:00</button></div>
+  <h2>추정 위치 <small id="cardsub"></small></h2>
+    <div class="evals" id="evalseg"><button data-i="0" class="on">13:00</button><button data-i="1">15:00</button><button data-i="2">18:00</button></div>
   <div class="kpis3" id="kpis"></div>
   <div class="meta"><span>미확인 <b id="unres">—</b></span></div>
-  <div class="legend small muted"><span><i class="lg-h"></i>입자 밀집 1 km 칸 (진할수록 많음)</span><span><i class="lg-c"></i>최다 1 km 칸</span><span><i class="lg-o"></i>해역 밖 (미확인)</span><span>비율 = 입자 2,000개 중 몫 · 확률 아님</span><a id="dl" href="#" hidden>JSON</a><button id="sharebtn" class="btn share" type="button" hidden>상황 공유</button></div>
+  <div class="legend small muted"><span><i class="lg-h"></i>경로가 많이 모인 1 km 칸 (진할수록 많음)</span><span><i class="lg-c"></i>최다 1 km 칸</span><span><i class="lg-o"></i>해역 밖 (미확인)</span><span>비율 = 표류 경로 2,000개 중 · 확률 아님</span><a id="dl" href="#" hidden>JSON</a><button id="sharebtn" class="btn share" type="button" hidden>상황 공유</button></div>
   <div id="brief" class="brief" hidden></div>
   <details class="more"><summary>세부 보기</summary><div class="tw"><table id="detail"></table></div></details>
 </section>

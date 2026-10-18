@@ -64,7 +64,7 @@ section{border-top:1px solid var(--rule);padding:96px 0}
   </nav>
 
   <div class="meta"><span><b>부산 앞바다</b> 가상 사고</span><span><b>Daytona</b> sandbox</span><span><b>Nosana</b> 요약</span><span>Daytona HackSprint Seoul · 2026.10.18</span></div>
-  <h1>해상 실종 신고를<br>세 가지 표류로 계산합니다</h1>
+  <h1>해상 실종자<br>위치 추정</h1>
   <div class="intro">
     <p>신고만으로는 사람이 빠진 정확한 위치와 시각을 알기 어렵습니다. Golden Sea는 위치와 시각 가정을 바꿔 가며 표류를 동시에 계산하고, 결과가 얼마나 달라지는지 나란히 보여 줍니다.</p>
     <div class="cta"><a class="btn" href="app.html">데모 열기 →</a><a class="link" href="https://github.com/currenjin/2026-10-daytona-hack-sprint">GitHub에서 코드 보기</a></div>
@@ -89,18 +89,18 @@ section{border-top:1px solid var(--rule);padding:96px 0}
   <div class="label">방법</div>
   <div class="how">
     <div><div class="k">01</div><h3>신고를 가정 셋으로</h3><p>신고된 위치와 시각을 기준안으로 두고, 위치를 반경 1 km로 넓힌 경우와 시각을 12:30까지 늦춘 경우를 만듭니다.</p></div>
-    <div><div class="k">02</div><h3>Daytona sandbox 3개</h3><p>시나리오마다 sandbox를 하나씩 띄워 같은 엔진으로 입자 2,000개를 6시간 흘립니다. 하나당 7~10초 걸렸습니다.</p></div>
-    <div><div class="k">03</div><h3>비교와 요약</h3><p>가장 많이 모인 1 km 칸의 입자 비율을 비교하고, Nosana 모델이 계산된 숫자로만 요약을 씁니다.</p></div>
+    <div><div class="k">02</div><h3>Daytona sandbox 3개</h3><p>시나리오마다 sandbox를 하나씩 띄워 같은 엔진으로 가능한 표류 경로 2,000개를 6시간 계산합니다. 하나당 7~10초 걸렸습니다.</p></div>
+    <div><div class="k">03</div><h3>비교와 요약</h3><p>경로가 가장 많이 모인 1 km 칸을 비교하고, Nosana 모델이 계산된 숫자로만 요약을 씁니다.</p></div>
   </div>
 </div></section>
 
 <section id="result"><div class="wrap">
   <div class="split">
-    <div class="prose"><div class="label">결과 · 13:00 KST</div><h2>위치 가정만 넓혀도 한 칸에 모이는 입자가 78%에서 31%로 줄어듭니다.</h2><p>입자 비율은 발견이나 생존 확률이 아닙니다. 해역을 벗어난 입자는 미확인으로 셉니다.</p></div>
+    <div class="prose"><div class="label">결과 · 13:00 KST</div><h2>신고 위치를 1 km 반경으로 넓히면, 같은 칸에 모이는 경로가 78%에서 31%로 줄어듭니다.</h2><p>가능한 표류 경로 2,000개 중 몇 %가 같은 1 km 칸에 모였는지입니다. 발견이나 생존 확률은 아닙니다. 해역을 벗어난 경로는 미확인으로 셉니다.</p></div>
     <div class="res">
-      <div class="row"><div class="n">S0 기준안<span>반경 250 m · 12:00–12:15</span></div><div class="bar"><i style="width:78.3%;background:var(--teal)"></i></div><div class="v">78.3%</div></div>
-      <div class="row"><div class="n">S1 위치 불확실<span>반경 1 km</span></div><div class="bar"><i style="width:31.2%;background:var(--white)"></i></div><div class="v">31.2%</div></div>
-      <div class="row"><div class="n">S2 시각 불확실<span>12:30까지 투입</span></div><div class="bar"><i style="width:46%;background:var(--indigo)"></i></div><div class="v">46.0%</div></div>
+      <div class="row"><div class="n">신고 시점<span>반경 250 m · 12:00–12:15</span></div><div class="bar"><i style="width:78.3%;background:var(--teal)"></i></div><div class="v">78.3%</div></div>
+      <div class="row"><div class="n">신고 기준 1 km 반경<span>위치를 반경 1 km로 넓힘</span></div><div class="bar"><i style="width:31.2%;background:var(--white)"></i></div><div class="v">31.2%</div></div>
+      <div class="row"><div class="n">신고 ~12:30<span>빠진 시각을 12:30까지 늦춤</span></div><div class="bar"><i style="width:46%;background:var(--indigo)"></i></div><div class="v">46.0%</div></div>
     </div>
   </div>
 </div></section>

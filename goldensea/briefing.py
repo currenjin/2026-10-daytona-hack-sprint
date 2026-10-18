@@ -13,9 +13,9 @@ import urllib.request
 
 SYSTEM = (
     "너는 해상 표류 시뮬레이션 결과를 짧게 요약한다. 주어진 숫자만 쓰고 새 숫자를 만들지 마라. "
-    "입자 비율을 발견 확률이나 생존 확률로 표현하지 마라. 수색 지시를 하지 마라. 세 문장 이내 한국어. 비율은 '가장 많이 모인 1 km 칸의 입자 비율'이라고 부르고 퍼센트로 쓴다. "
-    "첫 문장은 13:00 시나리오 비교, 둘째는 15:00. unresolved_fraction이 1이면 0%라고 하지 말고 "
-    "'모든 입자가 시연 해역 밖으로 나가 미확인'이라고 쓴다."
+    "비율을 발견 확률이나 생존 확률로 표현하지 마라. 수색 지시를 하지 마라. 세 문장 이내 한국어. 비율은 '표류 경로 2,000개 중 같은 1 km 칸에 모인 비율'이라고 부르고 퍼센트로 쓴다. '입자'라는 말은 쓰지 마라. "
+    "시나리오는 주어진 이름 그대로 부르고 S0 같은 기호를 만들지 마라. 첫 문장은 13:00 비교, 둘째는 15:00. unresolved_fraction이 1이면 0%라고 하지 말고 "
+    "'모든 경로가 시연 해역 밖으로 나가 미확인'이라고 쓴다."
 )
 
 
@@ -29,7 +29,8 @@ def summarise(results: list[dict]) -> dict:
     ok, why = configured()
     if not ok:
         return {"status": "NOT_CONFIGURED", "reason": why}
-    facts = [{"scenario": r.get("scenario", {}).get("id"),
+    names = {"S0": "신고 시점", "S1": "신고 기준 1 km 반경", "S2": "신고 ~12:30"}
+    facts = [{"scenario": names.get(r.get("scenario", {}).get("id"), r.get("scenario", {}).get("id")),
               "evaluations": [{"at": e["at"], "top_cell_fraction": e["top_cell_fraction"],
                                "unresolved_fraction": e["unresolved_fraction"]} for e in r.get("evaluations", [])]}
              for r in results if r.get("evaluations")]

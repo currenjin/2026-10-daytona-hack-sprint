@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const COLORS = { S0: 0x26e0c6, S1: 0xe9f3f2, S2: 0x7b74ff };
 const CSS_COLORS = { S0: '#26e0c6', S1: '#e9f3f2', S2: '#7b74ff' };
-const LABELS = { S0: 'S0 기준안', S1: 'S1 반경 1 km', S2: 'S2 투입 ~12:30' };
+const LABELS = { S0: '신고 시점', S1: '신고 기준 1 km 반경', S2: '신고 ~12:30' };
 const R = 6371000, LAT0 = 35.1, LON0 = 129.3, COS = Math.cos(LAT0 * Math.PI / 180);
 const toX = lon => (lon - LON0) * Math.PI / 180 * R * COS / 1000;   // km east
 const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -north
@@ -234,6 +234,7 @@ addEventListener('resize', resize); resize();
 
 let last = performance.now();
 const follow = new THREE.Vector3(2.2, 0, -2.2), _d = new THREE.Vector3();
+let camMode = 'follow';
 function followTarget(f) {
   let sx = 0, sz = 0, n = 0;
   for (const sid of ['S0', 'S1', 'S2']) {
@@ -256,7 +257,7 @@ function tick(now) {
   }
   const ring = pin.getObjectByName('ring'); const s = 1 + (now / 1000 % 1.6) * 0.8; ring.scale.set(s, s, s); ring.material.opacity = 0.6 * (1 - (now / 1000 % 1.6) / 1.6);
   if (Object.keys(state.results).length) {
-    followTarget(state.frame);
+    if (camMode === 'follow') followTarget(state.frame); else follow.set(0, 0, 0.3);
     _d.copy(follow).sub(controls.target).multiplyScalar(0.12);
     controls.target.add(_d); persp.position.add(_d);
     ortho.position.x += (follow.x - ortho.position.x) * 0.12; ortho.position.z += (follow.z + 2.6 - ortho.position.z) * 0.12;
@@ -268,6 +269,7 @@ requestAnimationFrame(tick);
 
 // ---------- controls ----------
 $('#play').onclick = () => {
+  camMode = 'follow';
   if (state.frame >= 36) setFrame(0);
   state.playing = !state.playing; $('#play').textContent = state.playing ? '❚❚' : '▶';
 };
@@ -284,6 +286,16 @@ document.querySelectorAll('#evalseg button').forEach(b => b.onclick = () => {
   setFrame([6, 18, 36][state.evalIdx]); renderCard();
 });
 $('#infobtn').onclick = () => $('#limitsDlg').showModal();
+// click the incident pin to fly there; click the particles or density cells to follow the estimate
+const ray = new THREE.Raycaster(); ray.params.Points.threshold = 0.4; let downAt = null;
+renderer.domElement.addEventListener('pointerdown', e => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downAt || Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 5) return;
+  ray.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  if (ray.intersectObject(pin, true).length) { camMode = 'incident'; return; }
+  const hits = ray.intersectObjects([...Object.values(clouds).filter(c => c.visible), ...heatMat.filter(m => m.visible), exits], false);
+  if (hits.length) camMode = 'follow';
+});
 const cellCenter = key => {
   const [i, j] = key.split(',').map(Number);
   const lat = LAT0 + (j + 0.5) * 1000 / R * 180 / Math.PI, lon = LON0 + (i + 0.5) * 1000 / (R * COS) * 180 / Math.PI;
@@ -295,15 +307,15 @@ function shareText() {
   L.push('신고 12:16 · 낚싯배 승선자 1명 추락 · 35.1000° N, 129.3000° E (해운대 남동쪽 약 14 km) · 12:00~12:15 추정');
   L.push('');
   for (let ei = 0; ei < 3; ei++) {
-    L.push(`${at[ei]} KST 입자가 가장 많이 모인 1 km 칸`);
+    L.push(`${at[ei]} KST 표류 경로가 가장 많이 모인 1 km 칸`);
     for (const sid of ['S0', 'S1', 'S2']) {
       const e = state.results[sid]?.evaluations?.[ei];
       if (!e) { L.push(`  ${LABELS[sid]}: 결과 없음`); continue; }
-      L.push(e.state_counts.ACTIVE === 0 ? `  ${LABELS[sid]}: 모든 입자 해역 밖 · 미확인` : `  ${LABELS[sid]}: ${cellCenter(e.top_cell)} 중심 · 입자 ${(e.top_cell_fraction * 100).toFixed(1)}%`);
+      L.push(e.state_counts.ACTIVE === 0 ? `  ${LABELS[sid]}: 모든 경로 해역 밖 · 미확인` : `  ${LABELS[sid]}: ${cellCenter(e.top_cell)} 중심 · 경로 ${(e.top_cell_fraction * 100).toFixed(1)}%`);
     }
   }
   L.push('');
-  L.push('입자 비율은 발견·생존 확률이 아닙니다. 공식 수색 지시가 아니며 판단은 상황실이 합니다.');
+  L.push('비율은 표류 경로 2,000개 중 몫이며 발견·생존 확률이 아닙니다. 공식 수색 지시가 아니며 판단은 상황실이 합니다.');
   L.push('해류: 저장된 Open-Meteo 예보 · 계산: ' + (Object.values(state.results)[0]?.executor === 'daytona' ? 'Daytona sandbox' : '로컬'));
   return L.join('\n');
 }
@@ -317,15 +329,15 @@ function renderCard() {
   const evAt = ['13:00', '15:00', '18:00'][state.evalIdx];
   const any = Object.values(state.results).find(r => r.evaluations);
   const where = any ? (any.executor === 'daytona' ? 'Daytona sandbox 실행' : '로컬 실행 (스폰서 실행 아님)') : '';
-  $('#cardsub').textContent = any ? `${evAt} KST · 입자 2,000개 중 · ${any.input_label} · ${where}` : '계산 전';
+  $('#cardsub').textContent = any ? `${evAt} KST` : '';
   $('#kpis').innerHTML = ['S0', 'S1', 'S2'].map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx];
     const allOut = e && e.state_counts.ACTIVE === 0;
     const val = e ? (allOut ? '—' : pct(e.top_cell_fraction)) : '—';
     const c = e?.state_counts || {}, n = e?.n || 2000;
-    const why = c.OUT_OF_DOMAIN === n ? '모두 해역 밖' : c.DATA_MISSING === n ? '모두 데이터 없음' : '계산 중인 입자 없음';
+    const why = c.OUT_OF_DOMAIN === n ? '모두 해역 밖' : c.DATA_MISSING === n ? '모두 데이터 없음' : '계산 중인 경로 없음';
     const st = r && !r.evaluations ? `<span class="st">${r.status}</span>` : (allOut ? `<span class="st">${why} · 미확인 ${pct(e.unresolved_fraction)}</span>` : '');
-    const cnt = e && !allOut ? `<span class="cnt">${Math.round(e.top_cell_fraction * n).toLocaleString()} / ${n.toLocaleString()}개</span><span class="bar"><span style="width:${e.top_cell_fraction * 100}%;background:${CSS_COLORS[sid]}"></span></span>` : '';
+    const cnt = e && !allOut ? `<span class="cnt">${Math.round(e.top_cell_fraction * n).toLocaleString()} / ${n.toLocaleString()} 경로</span><span class="bar"><span style="width:${e.top_cell_fraction * 100}%;background:${CSS_COLORS[sid]}"></span></span>` : '';
     const cls = state.focus === sid ? ' on' : (state.focus ? ' dim' : '');
     return `<div class="k${cls}" data-sid="${sid}" role="button" tabindex="0" title="이 시나리오만 지도에서 보기"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${cnt}${st}</div>`;
   }).join('');
@@ -339,19 +351,18 @@ function renderCard() {
       ins = `가정 하나에 ${a.toFixed(0)}% → ${b.toFixed(0)}%${same ? '' : ' · 최다 칸도 달라짐'}`;
     }
   }
-  $('#insight').textContent = ins; $('#insight').hidden = !ins;
   document.querySelectorAll('#kpis .k').forEach(k => k.onclick = () => {
     state.focus = state.focus === k.dataset.sid ? null : k.dataset.sid; applyFocus(); renderCard(); updateHeat(Math.round(state.frame));
   });
   updateCells();
   $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => {
     const e = state.results[sid]?.evaluations?.[state.evalIdx];
-    return e ? `${sid} ${e.unresolved_count}/${e.n}` : `${sid} —`;
+    return e ? `${LABELS[sid]} ${e.unresolved_count}/${e.n}` : `${LABELS[sid]} —`;
   }).join(' · ');
   const rows = ['S0', 'S1', 'S2'].map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx]; const sc = r?.scenario || {};
     const n = e?.n || 2000, sc_ = e?.state_counts || {};
-    return `<tr><td>${sid}</td><td>${sc.changed ?? '—'}</td><td>${e ? `${e.top_cell} · ${pct(e.top_cell_fraction)}` : '—'}</td><td>${e ? pct((sc_.OUT_OF_DOMAIN || 0) / n) : '—'}</td><td>${e ? pct((sc_.DATA_MISSING || 0) / n) : '—'}</td><td>${e ? pct((sc_.UNRELEASED || 0) / n) : '—'}</td><td>미검증</td></tr>`;
+    return `<tr><td>${LABELS[sid]}</td><td>${sc.changed ?? '—'}</td><td>${e ? `${e.top_cell} · ${pct(e.top_cell_fraction)}` : '—'}</td><td>${e ? pct((sc_.OUT_OF_DOMAIN || 0) / n) : '—'}</td><td>${e ? pct((sc_.DATA_MISSING || 0) / n) : '—'}</td><td>${e ? pct((sc_.UNRELEASED || 0) / n) : '—'}</td><td>미검증</td></tr>`;
   }).join('');
   $('#detail').innerHTML = `<thead><tr><th>시나리오</th><th>바꾼 가정</th><th>가장 많은 칸 (1 km)</th><th>해역 밖</th><th>데이터 없음</th><th>미투입</th><th>좌초</th></tr></thead><tbody>${rows}</tbody>`;
 }
@@ -436,15 +447,27 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
 }
 $('#runbtn').onclick = () => run();
 $('#intro-run').onclick = () => run();
-const REPORT = [['#f-what', '낚싯배 승선자 1명 추락'], ['#f-pos', '35.1000° N, 129.3000° E'], ['#f-ref', '해운대 남동쪽 약 14 km'], ['#f-time', '12:00 ~ 12:15'], ['#f-err', '반경 250 m']];
+const REPORTS = [
+  { when: '12:16', who: '선장 · 무선', what: '승선자 1명이 바다에 빠짐', pos: '35.1000° N, 129.3000° E (V-PASS 선박 위치)', err: '반경 250 m', time: '12:00 ~ 12:15', w: 0, note: '신고 1' },
+  { when: '12:22', who: '동승자 · 휴대폰 122', what: '배가 움직여서 빠진 위치를 정확히 모름', pos: '같은 해역 (해운대 남동쪽 약 14 km)', err: '반경 1 km', time: '12:00 ~ 12:15', w: 1, note: '신고 2' },
+  { when: '12:31', who: '인근 어선 · 목격', what: '12시 반 가까이 물 위에 사람이 보였음', pos: '같은 해역', err: '반경 250 m', time: '12:00 ~ 12:30', w: 2, note: '신고 3' },
+];
+let rIdx = 0;
 $('#intro-fill').onclick = async () => {
-  $('#intro-fill').disabled = true;
-  for (const [sel, val] of REPORT) {
-    const el = $(sel);
-    for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(r => setTimeout(r, 18)); }
+  const r = REPORTS[rIdx % REPORTS.length], btn = $('#intro-fill');
+  btn.disabled = true;
+  $('#r-tag').textContent = `가상 신고 ${rIdx % REPORTS.length + 1} · ${r.when} 접수`;
+  for (const [sel, val] of [['#f-when', r.when], ['#f-who', r.who], ['#f-what', r.what], ['#f-pos', r.pos], ['#f-err', r.err], ['#f-time', r.time]]) {
+    const el = $(sel); el.classList.remove('filled');
+    for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(res => setTimeout(res, 14)); }
     el.classList.add('filled');
   }
-  $('#derived').hidden = false; $('#intro-fill').hidden = true; $('#intro-run').hidden = false;
+  $('#cur-what').textContent = `신고 ${rIdx % REPORTS.length + 1} · ${r.when} · ${r.what}`;
+  $('#cur-meta').textContent = `${r.pos} · ${r.time} · ${r.err}`;
+  const li = document.querySelector(`#worlds li[data-w="${r.w}"]`); li.classList.add('on'); li.querySelector('span').textContent = r.note;
+  rIdx++;
+  $('#intro-run').disabled = false;
+  btn.disabled = false;
 };
 $('#executor').onchange = e => { state.executor = e.target.value; note(); };
 function note() {
@@ -466,7 +489,7 @@ async function init() {
   $('#src-label').textContent = state.source === 'cache' ? '저장된 예보' : '합성 흐름 (UI 개발용)';
   if (!cacheOk) banner('저장된 예보 파일이 없거나 해시가 다릅니다 (SETUP_BLOCKED). 지금은 UI 개발용 합성 흐름으로만 보여 줍니다. 예보가 아닙니다.', 'warn');
   note();
-  $('#intro-run').textContent = dt.available ? '세 가지 가정으로 계산 · Daytona sandbox 3개' : '세 가지 가정으로 계산 · 로컬';
+  $('#intro-run').textContent = '추정 위치 계산';
   renderRows(null); renderCard(); setFrame(0);
 }
 init();
