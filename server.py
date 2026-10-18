@@ -16,15 +16,16 @@ import os
 import threading
 import time
 import uuid
+from datetime import timezone
 from concurrent.futures import ThreadPoolExecutor
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from goldensea import briefing
 from goldensea.executors import EXECUTORS, daytona_available
-from goldensea.forcing import SetupBlocked, load_entry
+from goldensea.forcing import DataError, SetupBlocked, build_forcing, load_entry
 from goldensea.scenarios import (DISCLOSURES, EARLIEST, EVAL_END, INCIDENT_LAT, INCIDENT_LON, SCENARIOS,
-                                 UNITS, InputError, validate)
+                                 UNITS, InputError, validate, validate_support)
 
 ROOT = Path(__file__).resolve().parent
 WEB = ROOT / "web"
@@ -46,6 +47,15 @@ def cache_status() -> dict:
         except Exception as err:
             out[e["file"]] = {"status": "DATA_ERROR", "error": str(err)}
     return out
+
+
+def support_check() -> None:
+    """Cached forecast must cover every sampled instant, checked before any batch exists."""
+    manifest = json.loads((CONTRACTS / "cache-manifest.json").read_text())
+    entry = next(e for e in manifest["entries"] if e["file"] == "openmeteo_marine.json")
+    marine, _ = load_entry(CACHE, entry)
+    epoch = EARLIEST.astimezone(timezone.utc)
+    validate_support(EARLIEST, EVAL_END, build_forcing(marine, None, epoch).support, epoch)
 
 
 def start_batch(scenarios: list[str], executor: str, source: str) -> str:
@@ -145,8 +155,13 @@ class Handler(SimpleHTTPRequestHandler):
                 for s in scen:
                     sc = SCENARIOS[s]
                     validate(INCIDENT_LAT, INCIDENT_LON, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
+                if src == "cache":
+                    support_check()
             except InputError as e:
                 return self._json({"status": "INPUT_ERROR", "error": str(e), "new_run": False}, 400)
+            except (SetupBlocked, DataError) as e:
+                return self._json({"status": "SETUP_BLOCKED" if isinstance(e, SetupBlocked) else "DATA_ERROR",
+                                   "error": str(e), "new_run": False}, 409)
             if ex == "daytona" and not daytona_available()[0]:
                 return self._json({"status": "SETUP_BLOCKED", "error": daytona_available()[1]}, 409)
             return self._json({"batch_id": start_batch(scen, ex, src)})

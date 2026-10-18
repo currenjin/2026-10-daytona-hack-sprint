@@ -126,6 +126,14 @@ class Box:
         return self.x0 <= x <= self.x1 and self.y0 <= y <= self.y1
 
 
+class InputError(ValueError):
+    """Invalid request: no new run is created."""
+
+
+class LandRejected(InputError):
+    """Initial position lies on known land: REJECTED_LAND."""
+
+
 @dataclass
 class LandMask:
     """Synthetic land control (rectangles). A real coastline is NOT available."""
@@ -160,8 +168,13 @@ def integrate(particles: list[Particle], forcing: Forcing, alpha: float, t_end: 
     meets missing data stops and becomes DATA_MISSING; one whose step would
     leave the domain stops before leaving and becomes OUT_OF_DOMAIN (no
     clamping, no continued forecast). Without a land mask nothing becomes
-    STRANDED.
+    STRANDED. Any initial position on known land rejects the whole input
+    (REJECTED_LAND) before anything is advanced.
     """
+    if land is not None and land.boxes:
+        for p in particles:
+            if land.is_land(p.x0, p.y0):
+                raise LandRejected("REJECTED_LAND: initial position is on known land")
     for p in particles:
         if p.release_s > t_end:
             p.state = UNRELEASED

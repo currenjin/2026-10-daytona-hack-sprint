@@ -141,6 +141,11 @@ class Calculation(unittest.TestCase):
             validate_start(*i["land_input_m"], land)
         validate_start(*i["sea_control_m"], land)
         validate_start(*i["land_input_m"], None)   # no mask: not rejected, coastline unverified
+        # the real integration path rejects too, before advancing anything
+        with self.assertRaises(LandRejected):
+            integrate([Particle(*i["land_input_m"], 0)], constant_forcing((1, 0), 0, 10 ** 6), 0.0, 600, land=land)
+        sea = integrate([Particle(*i["sea_control_m"], 0)], constant_forcing((0, 0), 0, 10 ** 6), 0.0, 600, land=land)[0]
+        self.assertNotEqual(sea.state, STRANDED)
         # without a mask nothing becomes STRANDED
         p = run_const([[0, 0]], (1, 0), 3600)[0]
         self.assertNotEqual(p.state, STRANDED)

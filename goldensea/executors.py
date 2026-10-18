@@ -68,10 +68,12 @@ def run_daytona(scenario_id: str, cache_dir: Path, contracts: Path, source: str,
             return {"status": "INFRA_ERROR", "executor": "daytona", "sandbox_id": sandbox_id,
                     "error": (resp.result or "")[-800:], "executor_timings_s": timings,
                     "scenario": {"id": scenario_id}}
+        phase("downloading", {"sandbox_id": sandbox_id})
         t = time.perf_counter()
         result = json.loads(sandbox.fs.download_file("gs/out.json"))
         timings["download_s"] = round(time.perf_counter() - t, 3)
     finally:
+        phase("deleting", {"sandbox_id": sandbox_id})
         t = time.perf_counter()
         try:
             client.delete(sandbox)

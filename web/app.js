@@ -10,7 +10,7 @@ const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -nort
 const EXAG = 4;                                                      // terrain height exaggeration
 const $ = s => document.querySelector(s);
 
-const state = { results: {}, rows: {}, frame: 0, playing: false, evalIdx: 0, config: null, executor: 'local', source: 'cache', view: '3d' };
+const state = { results: {}, rows: {}, focus: null, frame: 0, playing: false, evalIdx: 0, config: null, executor: 'local', source: 'cache', view: '3d' };
 
 // ---------- three.js scene ----------
 const stage = $('#stage');
@@ -22,20 +22,22 @@ stage.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const fog3d = new THREE.Fog(0x05080a, 40, 90); scene.fog = fog3d;
 const persp = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 400);
-persp.position.set(-2, 20, 20);
+persp.position.set(-2, 13, 9.5);
 const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
-ortho.position.set(4, 60, -6); ortho.up.set(0, 0, -1);
+ortho.position.set(2.2, 60, 0.4); ortho.up.set(0, 0, -1);
 let camera = persp;
 const controls = new OrbitControls(persp, renderer.domElement);
-controls.target.set(4, 0, 4); controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47;
-controls.minDistance = 6; controls.maxDistance = 70;
+const CAM = (new URLSearchParams(location.search).get('cam') || '').split(',').map(Number);
+controls.target.set(2.2, 0, -2.2);
+if (CAM.length === 6) { persp.position.set(CAM[0], CAM[1], CAM[2]); controls.target.set(CAM[3], 0, CAM[4]); } controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47;
+controls.minDistance = 4; controls.maxDistance = 70;
 scene.add(new THREE.HemisphereLight(0x9fd8ff, 0x05080a, 0.55));
 const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(-20, 30, 10); scene.add(sun);
 
 // sea
 const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x07161a, roughness: 0.6, metalness: 0.2 }));
 sea.rotation.x = -Math.PI / 2; scene.add(sea);
-const grid = new THREE.GridHelper(80, 40, 0x0f2a2e, 0x0b1e21); grid.position.y = 0.002; scene.add(grid);
+const grid = new THREE.GridHelper(40, 40, 0x123236, 0x0d2427); grid.position.y = 0.002; scene.add(grid);
 
 // domain box (34.9–35.3, 129.0–129.4)
 {
@@ -99,6 +101,61 @@ const exitGeo = new THREE.BufferGeometry(); exitGeo.setAttribute('position', new
 const exits = new THREE.Points(exitGeo, new THREE.PointsMaterial({ color: 0xf2b84b, size: 0.14, map: tex, transparent: true, opacity: 0.55, depthWrite: false }));
 scene.add(exits);
 
+// top 1 km cell per scenario, centroid trails, place labels
+const cellBoxes = {}, trails = {}, centroids = {};
+for (const sid of ['S0', 'S1', 'S2']) {
+  const sq = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[0, 0], [1, 0], [1, 1], [0, 1]].map(([a, b]) => new THREE.Vector3(a, 0, -b))),
+    new THREE.LineBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 1 }));
+  sq.position.y = 0.08 + { S0: 0.02, S1: 0.01, S2: 0.03 }[sid]; sq.visible = false; scene.add(sq); cellBoxes[sid] = sq;
+  const fill = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
+  fill.rotation.x = -Math.PI / 2; fill.position.set(0.5, -0.02, -0.5); sq.add(fill);
+  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(37 * 3), 3));
+  const tl = new THREE.Line(tg, new THREE.LineBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 0.9 }));
+  tl.visible = false; scene.add(tl); trails[sid] = tl;
+}
+function computeCentroids(sid) {
+  const r = state.results[sid]; if (!r?.frames) return;
+  const pts = r.frames.map(F => {
+    let sx = 0, sy = 0, n = 0;
+    for (let k = 0; k < 2000; k++) if (F.s[k] === 'A') { sx += F.xy[2 * k]; sy += F.xy[2 * k + 1]; n++; }
+    return n ? [sx / n / 1000, sy / n / 1000] : null;
+  });
+  centroids[sid] = pts;
+  const arr = trails[sid].geometry.attributes.position.array; let last = [0, 0];
+  pts.forEach((p, i) => { if (p) last = p; arr[i * 3] = last[0]; arr[i * 3 + 1] = 0.1; arr[i * 3 + 2] = -last[1]; });
+  trails[sid].geometry.attributes.position.needsUpdate = true;
+}
+const PLACES = [['해운대', 35.1587, 129.1604], ['오륙도', 35.0917, 129.1278], ['사고 지점', 35.1, 129.3075]];
+const labelLayer = document.createElement('div'); labelLayer.className = 'labels'; document.body.appendChild(labelLayer);
+const placeEls = PLACES.map(([n]) => { const e = document.createElement('span'); e.textContent = n; labelLayer.appendChild(e); return e; });
+
+const _v = new THREE.Vector3();
+function placeLabels() {
+  PLACES.forEach(([, la, lo], i) => {
+    _v.set(toX(lo), 0.4, toZ(la)).project(camera);
+    const e = placeEls[i], vis = _v.z < 1 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05;
+    e.style.display = vis ? '' : 'none';
+    if (vis) e.style.transform = `translate(${(_v.x + 1) / 2 * innerWidth}px,${(1 - _v.y) / 2 * innerHeight}px) translate(0,-50%)`;
+  });
+}
+function applyFocus() {
+  for (const sid of ['S0', 'S1', 'S2']) {
+    const on = !state.focus || state.focus === sid;
+    clouds[sid].material.opacity = on ? (sid === 'S1' ? 0.45 : 0.85) : 0.06;
+    cellBoxes[sid].material.opacity = on ? 1 : 0.15; cellBoxes[sid].children[0].material.opacity = on ? 0.16 : 0.02;
+    trails[sid].material.opacity = on ? 0.9 : 0.12;
+  }
+}
+function updateCells() {
+  for (const sid of ['S0', 'S1', 'S2']) {
+    const e = state.results[sid]?.evaluations?.[state.evalIdx];
+    const box = cellBoxes[sid];
+    if (!e || !e.top_cell || e.state_counts.ACTIVE === 0) { box.visible = false; continue; }
+    const [i, j] = e.top_cell.split(',').map(Number);
+    box.position.x = i; box.position.z = -j; box.visible = true;
+  }
+}
+
 function setFrame(f) {
   state.frame = f;
   const i0 = Math.floor(f), i1 = Math.min(i0 + 1, 36), a = f - i0;
@@ -123,6 +180,10 @@ function setFrame(f) {
   }
   for (let k = n; k < 6000; k++) ea[k * 3 + 1] = -50;
   exitGeo.attributes.position.needsUpdate = true;
+  for (const sid of ['S0', 'S1', 'S2']) {
+    const tl = trails[sid]; tl.visible = !!centroids[sid];
+    if (tl.visible) tl.geometry.setDrawRange(0, Math.floor(f) + 1);
+  }
   const mins = Math.round(f * 10), hh = 12 + Math.floor(mins / 60), mm = mins % 60;
   $('#clock').textContent = `${hh}:${String(mm).padStart(2, '0')}`;
   $('#scrub').value = Math.round(f);
@@ -130,9 +191,13 @@ function setFrame(f) {
 
 function resize() {
   renderer.setSize(innerWidth, innerHeight);
-  persp.aspect = innerWidth / innerHeight; persp.updateProjectionMatrix();
-  const half = 15, asp = innerWidth / innerHeight;
-  Object.assign(ortho, { left: -half * asp, right: half * asp, top: half, bottom: -half }); ortho.updateProjectionMatrix();
+  persp.aspect = innerWidth / innerHeight;
+  // lift the scene so the drift sits above the result card
+  const lift = innerWidth > 900 ? Math.round(innerHeight * (CAM.length === 6 ? CAM[5] : 0.2)) : 0;
+  persp.setViewOffset(innerWidth, innerHeight, 0, lift, innerWidth, innerHeight); persp.updateProjectionMatrix();
+  const half = 7.3, asp = innerWidth / innerHeight;
+  const sh = 0;
+  Object.assign(ortho, { left: -half * asp, right: half * asp, top: half + sh, bottom: -half + sh }); ortho.updateProjectionMatrix();
 }
 addEventListener('resize', resize); resize();
 
@@ -145,7 +210,7 @@ function tick(now) {
     setFrame(f);
   }
   const ring = pin.getObjectByName('ring'); const s = 1 + (now / 1000 % 1.6) * 0.8; ring.scale.set(s, s, s); ring.material.opacity = 0.6 * (1 - (now / 1000 % 1.6) / 1.6);
-  controls.update(); renderer.render(scene, camera);
+  controls.update(); renderer.render(scene, camera); placeLabels();
   requestAnimationFrame(tick);
 }
 requestAnimationFrame(tick);
@@ -160,7 +225,7 @@ document.querySelectorAll('#viewseg button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#viewseg button').forEach(x => x.classList.toggle('on', x === b));
   state.view = b.dataset.v; camera = state.view === '3d' ? persp : ortho; controls.enabled = state.view === '3d';
   scene.fog = state.view === '3d' ? fog3d : null;
-  if (state.view === '2d') ortho.lookAt(4, 0, -6);
+  if (state.view === '2d') ortho.lookAt(2.2, 0, 0.4);
 });
 document.querySelectorAll('#evalseg button').forEach(b => b.onclick = () => {
   document.querySelectorAll('#evalseg button').forEach(x => x.classList.toggle('on', x === b));
@@ -184,8 +249,14 @@ function renderCard() {
     const c = e?.state_counts || {}, n = e?.n || 2000;
     const why = c.OUT_OF_DOMAIN === n ? '모두 해역 밖' : c.DATA_MISSING === n ? '모두 데이터 없음' : '계산 중인 입자 없음';
     const st = r && !r.evaluations ? `<span class="st">${r.status}</span>` : (allOut ? `<span class="st">${why} · 미확인 ${pct(e.unresolved_fraction)}</span>` : '');
-    return `<div class="k"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${st}</div>`;
+    const cnt = e && !allOut ? `<span class="cnt">${Math.round(e.top_cell_fraction * n).toLocaleString()} / ${n.toLocaleString()}개</span><span class="bar"><span style="width:${e.top_cell_fraction * 100}%;background:${CSS_COLORS[sid]}"></span></span>` : '';
+    const cls = state.focus === sid ? ' on' : (state.focus ? ' dim' : '');
+    return `<div class="k${cls}" data-sid="${sid}" role="button" tabindex="0" title="이 시나리오만 지도에서 보기"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${cnt}${st}</div>`;
   }).join('');
+  document.querySelectorAll('#kpis .k').forEach(k => k.onclick = () => {
+    state.focus = state.focus === k.dataset.sid ? null : k.dataset.sid; applyFocus(); renderCard();
+  });
+  updateCells();
   $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => {
     const e = state.results[sid]?.evaluations?.[state.evalIdx];
     return e ? `${sid} ${e.unresolved_count}/${e.n}개 ${pct(e.unresolved_fraction)}` : `${sid} —`;
@@ -204,16 +275,23 @@ function renderRows(batch) {
     const it = state.rows[sid]?.it; const r = state.rows[sid]?.r;
     let ph = '대기', cls = '';
     if (it) {
-      ph = { queued: '대기', creating_sandbox: 'sandbox 생성 중', uploading: '올리는 중', running: '계산 중', done: '' }[it.phase] ?? it.phase;
+      ph = { queued: '대기', creating_sandbox: 'sandbox 생성 중', uploading: '올리는 중', running: '계산 중', downloading: '받는 중', deleting: '지우는 중', done: '' }[it.phase] ?? it.phase;
       if (it.phase === 'done') {
         const ok = /^OK/.test(it.status); cls = ok ? 'ok' : (it.status === 'SETUP_BLOCKED' ? 'warn' : 'err');
         ph = ok ? `완료 ${it.wall_s}s` : it.status;
       }
     }
-    const where = r ? (r.executor === 'daytona' ? `Daytona · ${r.sandbox_id || ''}` : '로컬 실행 (스폰서 실행 아님)') : '';
-    const t = r?.executor_timings_s ? Object.entries(r.executor_timings_s).map(([k, v]) => `${k.replace('_s', '')} ${v}`).join(' · ') : (r?.timings_s ? `계산 ${r.timings_s.compute}s` : '');
+    const sbid = r?.sandbox_id || it?.info?.sandbox_id;
+    const isDt = (r?.executor || state.executor) === 'daytona';
+    const where = r ? (r.executor === 'daytona' ? `Daytona sandbox ${String(r.sandbox_id || '').slice(0, 8)}` : '로컬 실행 (스폰서 실행 아님)') : (sbid ? `Daytona sandbox ${String(sbid).slice(0, 8)}` : '');
+    const tfull = r?.executor_timings_s ? Object.entries(r.executor_timings_s).map(([k, v]) => `${k.replace('_s', '')} ${v}s`).join(' · ') : (r?.timings_s ? `계산 ${r.timings_s.compute}s` : '');
+    const t = '';
+    const order = ['creating_sandbox', 'uploading', 'running', 'downloading', 'deleting'];
+    const names = ['생성', '업로드', '계산', '다운로드', '삭제'];
+    const cur = it ? (it.phase === 'done' ? 5 : order.indexOf(it.phase)) : -1;
+    const stages = isDt && it ? `<span class="stages" title="${tfull}">${names.map((nm, i) => `<span class="${i < cur ? 'f' : i === cur ? 'c' : ''}">${nm}</span>`).join('')}</span>` : '';
     const retry = r && !/^OK/.test(r.status) && r.status !== 'SETUP_BLOCKED' ? ` <button class="btn" data-retry="${sid}">다시</button>` : '';
-    return `<li><span class="d" style="background:${CSS_COLORS[sid]}"></span><span>${LABELS[sid]}</span><span class="ph ${cls}">${ph}${retry}</span>${where ? `<span class="sb">${where}${t ? ' · ' + t : ''}</span>` : ''}</li>`;
+    return `<li><span class="d" style="background:${CSS_COLORS[sid]}"></span><span>${LABELS[sid]}</span><span class="ph ${cls}">${ph}${retry}</span>${stages}${where ? `<span class="sb" title="${r?.sandbox_id || ''} ${tfull}">${where}</span>` : ''}</li>`;
   }).join('');
   document.querySelectorAll('[data-retry]').forEach(b => b.onclick = () => run([b.dataset.retry]));
   const rs = Object.values(state.rows).map(x => x.r).filter(Boolean);
@@ -227,10 +305,10 @@ function banner(text, kind) {
 }
 
 async function run(scenarios = ['S0', 'S1', 'S2']) {
-  $('#runbtn').disabled = true;
+  $('#runbtn').disabled = true; $('#runpanel').classList.add('busy');
   const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source }) });
   const j = await res.json();
-  if (!j.batch_id) { banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
+  if (!j.batch_id) { $('#runpanel').classList.remove('busy'); banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
   banner(null);
   for (const s of scenarios) delete state.results[s];
   renderCard();
@@ -241,6 +319,9 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
     renderRows(batch);
   } while (Object.values(batch.items).some(it => it.phase !== 'done'));
   Object.assign(state.results, batch.results);
+  for (const sid of Object.keys(batch.results)) computeCentroids(sid);
+  applyFocus();
+  $('#runpanel').classList.remove('busy');
   renderCard(); setFrame(0); state.playing = true; $('#play').textContent = '❚❚';
   const prov = Object.values(batch.results).find(r => r.provenance)?.provenance?.current;
   if (prov) $('#prov').innerHTML = [

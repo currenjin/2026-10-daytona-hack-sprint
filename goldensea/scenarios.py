@@ -48,12 +48,7 @@ SCENARIOS = {
 }
 
 
-class InputError(ValueError):
-    """Invalid request: no new run is created."""
-
-
-class LandRejected(InputError):
-    """Initial position lies on known (synthetic) land: REJECTED_LAND."""
+from .engine import InputError, LandRejected  # noqa: E402  (shared with the engine guard)
 
 
 # The nine limits shown in the UI dialog and carried in every exported run.
