@@ -1,18 +1,18 @@
 # Golden Sea
 
-**Not one predicted line, but the whole plausible sea.**
-When someone falls overboard, Golden Sea runs several "what-if" worlds side by side (same particles, one assumption changed each) and shows where 2,000 drift particles gather over the next six hours.
+Estimate where a person lost at sea has drifted, from a single report.
+A report gives only a rough place and time, so Golden Sea computes several cases at once (fell 15 min earlier, reported time, fell 15 min later, 1 km position radius) and shows how far apart the results are.
 
-![Golden Sea running on Daytona with a Nosana summary](docs/screenshot.png)
+![Golden Sea: four cases computed in Daytona sandboxes with a Nosana summary](docs/screenshot.png)
 
 | | |
 | --- | --- |
-| Problem | Drift forecasts are usually shown as one line. From 2021 to June 2026, 165 of 256 people missing at sea or on the coast in Korea (64.5%) have not been found (Korea Coast Guard data via Rep. Moon Dae-rim, Financial News 2026-09-04). In the Sept 2026 Oryukdo tugboat capsizing off Busan, searchers focused on Busan and Ulsan waters, and one crew member was found about 100 km away in Pohang (Nocut News 2026-09-10). |
-| What it does | Synthetic incident off Busan (35.1°N, 129.3°E, 12:00–12:15 KST). S0 baseline (250 m radius), S1 radius 1 km, S2 release until 12:30. 6-hour playback in 3D/2D, the share of particles in the densest 1 km cell at 13:00 / 15:00 / 18:00. |
-| Result (stored forecast) | Densest 1 km cell at 13:00: S0 78.4%, S1 31.2%, S2 46.0%. By 18:00 all particles leave the demo domain and are shown as unresolved, not as 0. |
-| **Daytona** | Each scenario runs in its own Daytona sandbox: create → upload engine, contracts and cached forecast → run → download result → delete. Measured: 3 sandboxes in parallel, about 8 s each (create 1.2–1.6 s, upload ~3 s, compute ~0.9 s, download ~1.4 s, delete ~0.2 s). |
-| **Nosana** | The result is summarised by `qwen/qwen3.8-27b` on Nosana inference (OpenAI-compatible), about 3 s, prompted to reuse computed numbers only and never call particle shares "probabilities". |
-| Honesty | Synthetic incident, cached Open-Meteo forecast (SHA-256 pinned), single-point uniform current, coastline and surface-current accuracy unverified. Not official search guidance. |
+| Problem | From 2021 to June 2026, 165 of 256 people missing at sea or on the coast in Korea (64.5%) have not been found (Korea Coast Guard data via Rep. Moon Dae-rim, Financial News 2026-09-04). In the Sept 2026 Oryukdo tugboat capsizing, one crew member was found near Pohang, about 100 km from the search area (Nocut News 2026-09-10). |
+| Flow | Landing → enter a simulated report (three different incidents off Busan) → estimate → 6-hour 3D/2D playback with the densest 1 km cells highlighted → share text for rescue crews and the control room. |
+| Result | Report ~14 km SE of Haeundae, one hour later, share of 2,000 drift paths in the same 1 km cell: fell 15 min earlier 80.7%, reported time 78.3%, fell 15 min later 46.0%, 1 km radius 31.2%. |
+| **Daytona** | One Daytona sandbox per case, four at once: create → upload engine, contracts and cached forecast → run → download → delete. Measured about 6–10 s each. |
+| **Nosana** | `qwen/qwen3.8-27b` on Nosana inference writes a two-line summary from the computed numbers only (about 3 s). |
+| Limits | Simulated reports, cached Open-Meteo current forecast (SHA-256 pinned), one current value per incident, coastline accuracy unverified. Shares are not probabilities. Not official search guidance. The frozen verification criteria cover the first incident (S0–S2, 34.9–35.3°N, 129.0–129.4°E); the -15 min case, incidents 2–3 and the widened demo area are marked `PRESET_NOT_IN_FROZEN_CRITERIA`. |
 
 Built at Daytona HackSprint Seoul, 2026-10-18.
 
@@ -20,14 +20,11 @@ Built at Daytona HackSprint Seoul, 2026-10-18.
 
 ## 한국어
 
-바다에 사람이 떨어졌을 때, 하나의 예측선 대신 **가정을 바꾼 여러 세계**를 동시에 돌려 입자가 어디로 퍼지는지 비교합니다.
-Daytona HackSprint Seoul · 2026-10-18.
+해상 실종 신고 하나로 실종자가 표류했을 위치를 추정합니다. 신고로는 위치와 시각을 대략만 알기 때문에, 빠진 시각 ±15분과 위치 반경 1 km를 바꾼 네 가지 경우를 동시에 계산해 나란히 보여 줍니다.
 
-- 사고: 부산 앞바다 **가상** 사고 (35.1°N, 129.3°E), 투입 12:00–12:15 KST, 입자 2,000개, 6시간
-- 시나리오: S0 기준안(반경 250 m) · S1 반경 1 km · S2 투입 ~12:30 (같은 초기 표본 공유)
-- 입력: 저장된 Open-Meteo 해류·GFS 바람 응답(SHA-256 고정, Git 미포함)
-- 화면: 3D/2D 지도, 6시간 재생, 시나리오별 핵심 숫자, 실행 패널(로컬 / Daytona sandbox)
-- 공식 수색 안내가 아니며 입자 비율은 발견·생존 확률이 아닙니다. 해안선·표층 유속은 미검증입니다.
+- 흐름: 랜딩 → 가상 신고 입력(부산 앞바다 서로 다른 사고 3건) → 추정 위치 계산 → 6시간 재생(3D/2D, 경우의 수가 많이 모인 1 km 칸 표시) → 출동팀·상황실 공유 문구
+- 계산: 경우마다 Daytona sandbox 하나, 4개 동시. Nosana 모델이 계산된 숫자로만 두 줄 요약
+- 표류 경로 경우의 수 2,000가지 중 같은 1 km 칸에 모인 비율이며 발견·생존 확률이 아닙니다. 공식 수색 안내가 아닙니다.
 
 ## 실행
 
