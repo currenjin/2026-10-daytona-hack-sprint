@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 const COLORS = { S0: 0x26e0c6, S1: 0xe9f3f2, S2: 0x7b74ff };
 const CSS_COLORS = { S0: '#26e0c6', S1: '#e9f3f2', S2: '#7b74ff' };
-const LABELS = { S0: '신고 시점', S1: '신고 기준 1 km 반경', S2: '빠진 시각 12:30까지' };
+const LABELS = { S0: '신고 시점', S1: '신고 기준 1 km 반경', S2: '늦게 빠진 경우 (12:30)' };
 const R = 6371000, LAT0 = 35.1, LON0 = 129.3, COS = Math.cos(LAT0 * Math.PI / 180);
 const toX = lon => (lon - LON0) * Math.PI / 180 * R * COS / 1000;   // km east
 const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -north
