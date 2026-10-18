@@ -168,6 +168,13 @@ class Handler(SimpleHTTPRequestHandler):
             if ex == "daytona" and not daytona_available()[0]:
                 return self._json({"status": "SETUP_BLOCKED", "error": daytona_available()[1]}, 409)
             return self._json({"batch_id": start_batch(scen, ex, src, inc)})
+        if self.path == "/api/parse":
+            text = str(body.get("text", ""))[:2000]
+            if not text.strip():
+                return self._json({"status": "INPUT_ERROR", "error": "empty report"}, 400)
+            return self._json(briefing.parse_report(text))
+        if self.path == "/api/dispatch":
+            return self._json(briefing.dispatch_message(body.get("facts") or {}))
         if self.path.startswith("/api/brief/"):
             bid = self.path.rsplit("/", 1)[-1]
             with LOCK:

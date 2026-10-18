@@ -55,3 +55,65 @@ def summarise(results: list[dict]) -> dict:
     return {"status": "OK", "provider": "nosana", "model": body["model"],
             "latency_s": round(time.perf_counter() - t, 3), "text": text,
             "label": "Nosana 모델 요약 · 숫자는 계산 결과에서만"}
+
+
+def _chat(system: str, user: str, max_tokens: int = 500) -> dict:
+    ok, why = configured()
+    if not ok:
+        return {"status": "NOT_CONFIGURED", "reason": why}
+    body = {"model": os.environ.get("NOSANA_LLM_MODEL", "default"),
+            "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            "temperature": 0, "max_tokens": max_tokens, "chat_template_kwargs": {"enable_thinking": False}}
+    req = urllib.request.Request(os.environ["NOSANA_LLM_URL"].rstrip("/") + "/chat/completions",
+                                 data=json.dumps(body).encode(), method="POST",
+                                 headers={"Content-Type": "application/json",
+                                          **({"Authorization": f"Bearer {os.environ['NOSANA_API_KEY']}"}
+                                             if os.environ.get("NOSANA_API_KEY") else {})})
+    t = time.perf_counter()
+    try:
+        with urllib.request.urlopen(req, timeout=60) as r:
+            out = json.loads(r.read())
+    except Exception as e:
+        return {"status": "INFRA_ERROR", "error": str(e)[:300]}
+    import re
+    text = re.sub(r"<think>.*?</think>", "", out["choices"][0]["message"]["content"] or "", flags=re.S).strip()
+    return {"status": "OK", "model": body["model"], "latency_s": round(time.perf_counter() - t, 3), "text": text}
+
+
+PARSE = (
+    "너는 해상 실종 신고문을 접수 양식으로 정리한다. 신고문에 있는 말만 쓰고 없는 값은 빈 문자열로 둔다. "
+    "JSON 하나만 출력한다. 키: when(접수 시각 HH:MM), who(신고자와 경로), what(무슨 일인지 한 줄), "
+    "pos(위도·경도 그대로), ref(기준 지점과 거리), time(빠진 시각 범위 'HH:MM ~ HH:MM'), err(위치 오차)."
+)
+
+
+def parse_report(text: str) -> dict:
+    res = _chat(PARSE, text, 300)
+    if res.get("status") != "OK":
+        return res
+    import re
+    m = re.search(r"\{.*\}", res["text"], flags=re.S)
+    try:
+        fields = json.loads(m.group(0)) if m else None
+    except json.JSONDecodeError:
+        fields = None
+    if not isinstance(fields, dict):
+        return {"status": "MODEL_ERROR", "raw": res["text"][:300], "latency_s": res["latency_s"]}
+    keep = {k: str(fields.get(k, "")) for k in ("when", "who", "what", "pos", "ref", "time", "err")}
+    return {"status": "OK", "fields": keep, "model": res["model"], "latency_s": res["latency_s"]}
+
+
+DISPATCH = (
+    "너는 해양경찰 상황실 담당자다. 주어진 신고와 계산 결과로 출동 함정·항공대·상황실에 보낼 상황 공유 문구를 쓴다. "
+    "주어진 숫자와 좌표만 그대로 쓰고 새 숫자를 만들지 마라. 확률이라고 쓰지 마라. 수색 지시를 하지 말고 상황 공유로 쓴다. "
+    "신고 내용은 주어진 '신고' 문장을 그대로 옮기고 다른 말로 바꾸지 마라(예: '투신' 같은 표현 금지). 형식: 첫 줄 [상황 공유], 그다음 줄에 신고 문장 그대로. 그다음 결과의 첫 번째 시각만 골라 '■ HH:MM KST' 한 줄, "
+    "그 아래 주어진 경우를 하나도 빼지 말고 경우마다 '- 경우 이름: 칸 중심 좌표 · 비율' 한 줄씩. "
+    "마지막 줄 '비율은 표류 경로 경우의 수 2,000가지 중 몫이며 확률이 아님. 판단은 상황실'. 한국어."
+)
+
+
+def dispatch_message(facts: dict) -> dict:
+    res = _chat(DISPATCH, json.dumps(facts, ensure_ascii=False), 700)
+    if res.get("status") == "OK":
+        res["label"] = "Nosana 모델 작성 · 숫자는 계산 결과에서만"
+    return res

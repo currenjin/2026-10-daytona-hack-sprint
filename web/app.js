@@ -343,7 +343,20 @@ function shareText() {
   L.push('해류: 저장된 Open-Meteo 예보 · 계산: ' + (Object.values(state.results)[0]?.executor === 'daytona' ? 'Daytona sandbox' : '로컬'));
   return L.join('\n');
 }
-$('#sharebtn').onclick = () => { $('#sharetext').value = shareText(); $('#shareDlg').showModal(); };
+$('#sharebtn').onclick = async () => {
+  $('#sharetext').value = shareText(); $('#shareDlg').showModal();
+  if (!state.config?.briefing?.available) return;
+  $('#share-note').textContent = 'Nosana 모델이 공유 문구를 쓰는 중… (기본 문구 먼저 표시)';
+  const rr = REPORTS.find(x => x.inc === state.incident);
+  const facts = { 신고: `${rr.when} · ${rr.what} · ${rr.pos} (${rr.ref}) · ${rr.time}`, 계산: Object.values(state.results)[0]?.executor === 'daytona' ? 'Daytona sandbox' : '로컬',
+    결과: (Object.values(state.results).find(r => r.evaluations)?.evaluations || []).map((e0, ei) => ({ 시각: e0.at.slice(11, 16) + ' KST',
+      경우: SIDS.map(sid => { const e = state.results[sid]?.evaluations?.[ei]; return e ? { 이름: LABELS[sid], 칸중심: e.state_counts.ACTIVE ? cellCenter(e.top_cell) : '해역 밖 미확인', 비율: e.state_counts.ACTIVE ? `${(e.top_cell_fraction * 100).toFixed(1)}%` : '-' } : null; }).filter(Boolean) })) };
+  try {
+    const d = await (await fetch('/api/dispatch', { method: 'POST', body: JSON.stringify({ facts }) })).json();
+    if (d.status === 'OK' && d.text) { $('#sharetext').value = d.text; $('#share-note').textContent = `${d.label} · ${d.model} · ${d.latency_s}s · 복사해서 전달하세요. 전송 연동은 아직 없습니다.`; }
+    else $('#share-note').textContent = `Nosana 작성 실패(${d.status}) · 기본 문구입니다.`;
+  } catch { $('#share-note').textContent = 'Nosana 연결 실패 · 기본 문구입니다.'; }
+};
 $('#sharecopy').onclick = async () => { try { await navigator.clipboard.writeText($('#sharetext').value); $('#sharecopy').textContent = '복사됨'; } catch { $('#sharetext').select(); } setTimeout(() => $('#sharecopy').textContent = '복사', 1500); };
 
 // ---------- data ----------
@@ -476,9 +489,9 @@ async function run(scenarios = SIDS) {
 $('#runbtn').onclick = () => run();
 $('#intro-run').onclick = () => run();
 const REPORTS = [
-  { inc: 'A', when: '12:16', who: '선장 · 무선', what: '낚싯배 승선자 1명이 바다에 빠짐', pos: '35.1000° N, 129.3000° E', ref: '해운대 남동쪽 약 14 km', time: '12:00 ~ 12:15', err: '반경 250 m' },
-  { inc: 'B', when: '13:36', who: '선원 · 휴대폰 122', what: '화물선 선원 1명이 갑판에서 보이지 않음', pos: '35.0000° N, 129.2000° E', ref: '오륙도 남남동쪽 약 12 km', time: '13:20 ~ 13:35', err: '반경 250 m' },
-  { inc: 'C', when: '14:46', who: '레저보트 · 무선', what: '레저보트 동승자 1명이 파도에 휩쓸림', pos: '35.2000° N, 129.3000° E', ref: '기장 남동쪽 약 9 km', time: '14:30 ~ 14:45', err: '반경 250 m' },
+  { inc: 'A', call: '여기 낚싯배 해운호 선장입니다. 12시 16분이고요, 해운대 남동쪽 14킬로쯤, 35.1000 129.3000에서 승선자 한 명이 바다에 빠졌습니다. 12시에서 12시 15분 사이에 빠진 것 같고 위치는 250미터 안쪽입니다.', when: '12:16', who: '선장 · 무선', what: '낚싯배 승선자 1명이 바다에 빠짐', pos: '35.1000° N, 129.3000° E', ref: '해운대 남동쪽 약 14 km', time: '12:00 ~ 12:15', err: '반경 250 m' },
+  { inc: 'B', call: '122죠? 화물선 선원인데요, 지금 13시 36분인데 동료 한 명이 갑판에서 안 보여요. 오륙도 남남동쪽 12킬로 정도, 좌표는 35.0000 129.2000이에요. 13시 20분에서 35분 사이에 없어진 것 같아요. 오차는 250미터쯤이요.', when: '13:36', who: '선원 · 휴대폰 122', what: '화물선 선원 1명이 갑판에서 보이지 않음', pos: '35.0000° N, 129.2000° E', ref: '오륙도 남남동쪽 약 12 km', time: '13:20 ~ 13:35', err: '반경 250 m' },
+  { inc: 'C', call: '레저보트입니다, 14시 46분. 기장 남동쪽 9킬로 35.2000 129.3000 부근에서 동승자가 파도에 휩쓸렸습니다. 14시 30분에서 45분 사이고 반경 250미터 안이에요.', when: '14:46', who: '레저보트 · 무선', what: '레저보트 동승자 1명이 파도에 휩쓸림', pos: '35.2000° N, 129.3000° E', ref: '기장 남동쪽 약 9 km', time: '14:30 ~ 14:45', err: '반경 250 m' },
 ];
 let rIdx = 0;
 function setIncident(id) {
@@ -498,7 +511,21 @@ $('#intro-fill').onclick = async () => {
   $('#r-tag').textContent = `가상 신고 · ${r.when} 접수`;
   $('#cur-what').textContent = `${r.when} · ${r.what}`;
   $('#cur-meta').textContent = `${r.ref} · ${r.time}`;
-  for (const [sel, val] of [['#f-when', r.when], ['#f-who', r.who], ['#f-what', r.what], ['#f-pos', `${r.pos} (${r.ref})`], ['#f-err', r.err], ['#f-time', r.time]]) {
+  const call = $('#f-call'); call.value = '';
+  for (const sel of ['#f-when', '#f-who', '#f-what', '#f-pos', '#f-err', '#f-time']) { $(sel).value = ''; $(sel).classList.remove('filled'); }
+  for (let i = 1; i <= r.call.length; i += 3) { call.value = r.call.slice(0, i); await new Promise(res => setTimeout(res, 8)); }
+  call.value = r.call;
+  let f = { when: r.when, who: r.who, what: r.what, pos: r.pos, ref: r.ref, time: r.time, err: r.err };
+  const tag = $('#parse-tag');
+  if (state.config?.briefing?.available) {
+    tag.textContent = 'Nosana 모델이 신고문을 정리하는 중…';
+    try {
+      const pr = await (await fetch('/api/parse', { method: 'POST', body: JSON.stringify({ text: r.call }) })).json();
+      if (pr.status === 'OK') { for (const k of Object.keys(f)) if (pr.fields[k]) f[k] = pr.fields[k]; tag.textContent = `Nosana 모델이 신고문에서 정리 · ${pr.model} · ${pr.latency_s}s`; }
+      else tag.textContent = `Nosana 정리 실패(${pr.status}) · 기본 양식으로 채움`;
+    } catch { tag.textContent = 'Nosana 연결 실패 · 기본 양식으로 채움'; }
+  } else tag.textContent = '';
+  for (const [sel, val] of [['#f-when', f.when], ['#f-who', f.who], ['#f-what', f.what], ['#f-pos', f.ref ? `${f.pos} (${f.ref})` : f.pos], ['#f-err', f.err], ['#f-time', f.time]]) {
     const el = $(sel); el.classList.remove('filled');
     for (let i = 1; i <= val.length; i++) { el.value = val.slice(0, i); await new Promise(res => setTimeout(res, 12)); }
     el.classList.add('filled');

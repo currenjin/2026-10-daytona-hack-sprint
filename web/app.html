@@ -39,6 +39,8 @@
 <section class="intro" id="intro">
   <div class="ihead"><span class="tag" id="r-tag">가상 신고 대기</span></div>
   <h1>신고 내용을 입력합니다</h1>
+  <label class="call">신고 내용 (원문)<textarea id="f-call" rows="3" readonly placeholder="—"></textarea></label>
+  <div class="nosana-tag" id="parse-tag"></div>
   <form id="report" autocomplete="off">
     <label>접수<input id="f-when" readonly placeholder="—"></label>
     <label>신고자<input id="f-who" readonly placeholder="—"></label>
@@ -66,7 +68,7 @@
 
 <dialog id="shareDlg" class="dlg share-dlg">
   <h3>상황 공유 문구</h3>
-  <p class="small muted">출동 함정·항공대·상황실에 보낼 문구입니다. 복사해서 전달하세요. 전송 연동은 아직 없습니다.</p>
+  <p class="small muted" id="share-note">출동 함정·항공대·상황실에 보낼 문구입니다. 복사해서 전달하세요. 전송 연동은 아직 없습니다.</p>
   <textarea id="sharetext" rows="13" readonly></textarea>
   <div class="share-act"><button id="sharecopy" class="btn primary" type="button">복사</button><form method="dialog"><button class="btn">닫기</button></form></div>
 </dialog>
