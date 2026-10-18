@@ -63,3 +63,5 @@ table{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}th,td{te
   .kpis3{grid-template-columns:1fr 1fr 1fr}.k b{font-size:22px}
   .runpanel{display:none}
 }
+
+.brief{margin-top:10px;padding:10px 12px;border-radius:10px;background:#0f181c;border:1px solid var(--line);font-size:13.5px;line-height:1.5}.brief em{display:block;font-style:normal;font-size:11px;color:var(--dim);margin-bottom:4px}

@@ -13,7 +13,9 @@ import urllib.request
 
 SYSTEM = (
     "너는 해상 표류 시뮬레이션 결과를 짧게 요약한다. 주어진 숫자만 쓰고 새 숫자를 만들지 마라. "
-    "입자 비율을 발견 확률이나 생존 확률로 표현하지 마라. 수색 지시를 하지 마라. 세 문장 이내 한국어."
+    "입자 비율을 발견 확률이나 생존 확률로 표현하지 마라. 수색 지시를 하지 마라. 세 문장 이내 한국어. 비율은 '가장 많이 모인 1 km 칸의 입자 비율'이라고 부르고 퍼센트로 쓴다. "
+    "첫 문장은 13:00 시나리오 비교, 둘째는 15:00. unresolved_fraction이 1이면 0%라고 하지 말고 "
+    "'모든 입자가 시연 해역 밖으로 나가 미확인'이라고 쓴다."
 )
 
 
@@ -34,7 +36,8 @@ def summarise(results: list[dict]) -> dict:
     body = {"model": os.environ.get("NOSANA_LLM_MODEL", "default"),
             "messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": json.dumps(facts, ensure_ascii=False)}],
-            "temperature": 0}
+            "temperature": 0, "max_tokens": 600,
+            "chat_template_kwargs": {"enable_thinking": False}}
     req = urllib.request.Request(os.environ["NOSANA_LLM_URL"].rstrip("/") + "/chat/completions",
                                  data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json",
@@ -42,9 +45,12 @@ def summarise(results: list[dict]) -> dict:
                                              if os.environ.get("NOSANA_API_KEY") else {})})
     t = time.perf_counter()
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
+        with urllib.request.urlopen(req, timeout=90) as r:
             out = json.loads(r.read())
     except Exception as e:
         return {"status": "INFRA_ERROR", "error": str(e)[:300]}
-    return {"status": "OK", "provider": "nosana", "latency_s": round(time.perf_counter() - t, 3),
-            "text": out["choices"][0]["message"]["content"], "label": "모델 요약 · 숫자는 계산 결과에서만"}
+    import re
+    text = re.sub(r"<think>.*?</think>", "", out["choices"][0]["message"]["content"] or "", flags=re.S).strip()
+    return {"status": "OK", "provider": "nosana", "model": body["model"],
+            "latency_s": round(time.perf_counter() - t, 3), "text": text,
+            "label": "Nosana 모델 요약 · 숫자는 계산 결과에서만"}

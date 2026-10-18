@@ -235,6 +235,11 @@ async function run(scenarios = ['S0', 'S1', 'S2']) {
   const prov = Object.values(batch.results).find(r => r.provenance)?.provenance?.current;
   if (prov) $('#prov').textContent = `해류: ${prov.provider} · 요청 ${prov.requested_point} → 반환 ${prov.returned_point} · 수신 시각 ${prov.received_at_label} · 탐침 시작 ${prov.probe_start} · sha256 ${prov.sha256.slice(0, 12)}…`;
   $('#runbtn').disabled = false;
+  if (state.config?.briefing?.available && Object.values(batch.results).some(r => r.evaluations)) {
+    const bx = $('#brief'); bx.hidden = false; bx.innerHTML = '<em>Nosana 요약 생성 중…</em>';
+    const br = await (await fetch(`/api/brief/${j.batch_id}`, { method: 'POST' })).json();
+    bx.innerHTML = br.status === 'OK' ? `<em>${br.label} · ${br.model} · ${br.latency_s}s</em>${br.text.replace(/</g, '&lt;')}` : `<em>Nosana 요약 실패 · ${br.status}</em>`;
+  }
 }
 $('#runbtn').onclick = () => run();
 $('#executor').onchange = e => state.executor = e.target.value;
