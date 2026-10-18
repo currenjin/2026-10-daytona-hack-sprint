@@ -22,8 +22,8 @@ renderer.setSize(innerWidth, innerHeight);
 renderer.setClearColor(0x05080a);
 stage.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
-const fog3d = new THREE.Fog(0x05080a, 60, 140); scene.fog = fog3d;
-const persp = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 400);
+const fog3d = new THREE.Fog(0x05080a, 200, 1400); scene.fog = fog3d;
+const persp = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 3000);
 persp.position.set(-6, 24, 18);
 const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 400);
 ortho.position.set(2.2, 60, 0.4); ortho.up.set(0, 0, -1);
@@ -32,12 +32,12 @@ const controls = new OrbitControls(persp, renderer.domElement);
 const CAM = (new URLSearchParams(location.search).get('cam') || '').split(',').map(Number);
 controls.target.set(2.2, 0, -2.2);
 if (CAM.length === 6) { persp.position.set(CAM[0], CAM[1], CAM[2]); controls.target.set(CAM[3], 0, CAM[4]); } controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.47;
-controls.minDistance = 4; controls.maxDistance = 70;
+controls.minDistance = 4; controls.maxDistance = 900;
 scene.add(new THREE.HemisphereLight(0x9fd8ff, 0x05080a, 0.55));
 const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(-20, 30, 10); scene.add(sun);
 
 // sea
-const sea = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x07161a, roughness: 0.6, metalness: 0.2 }));
+const sea = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshStandardMaterial({ color: 0x07161a, roughness: 0.6, metalness: 0.2 }));
 sea.rotation.x = -Math.PI / 2; scene.add(sea);
 const grid = new THREE.GridHelper(40, 40, 0x123236, 0x0d2427); grid.position.y = 0.002; scene.add(grid);
 
@@ -72,6 +72,20 @@ async function loadTerrain() {
   }
   geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
   scene.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, flatShading: false })));
+}
+
+// whole-country land outline under the detailed Busan terrain
+async function loadKorea() {
+  const k = await (await fetch('assets/korea.json')).json();
+  const mat = new THREE.MeshStandardMaterial({ color: 0x2b3a33, roughness: 1 });
+  const edge = new THREE.LineBasicMaterial({ color: 0x4e6b60 });
+  for (const ring of k.polygons) {
+    const shape = new THREE.Shape(ring.map(([lo, la]) => new THREE.Vector2(toX(lo), -toZ(la))));
+    const geo = new THREE.ShapeGeometry(shape); geo.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(geo, mat); m.position.y = -0.05; scene.add(m);
+    const pts = ring.map(([lo, la]) => new THREE.Vector3(toX(lo), 0.0, toZ(la)));
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), edge));
+  }
 }
 
 // incident pin
@@ -493,7 +507,7 @@ function note() {
 }
 
 async function init() {
-  await loadTerrain();
+  await loadTerrain(); loadKorea();
   const cfg = await (await fetch('/api/config')).json(); state.config = cfg;
   if (cfg.disclosures) $('#disc').innerHTML = cfg.disclosures.map(d => `<li>${d.ko}</li>`).join('');
   const dt = cfg.executors.daytona;
