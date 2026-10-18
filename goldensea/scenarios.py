@@ -23,9 +23,9 @@ N_PARTICLES = 2000
 # Demo incidents. Only "A" is covered by the frozen criteria; B and C reuse the
 # same cached multi-point forecast at other request indices and are unverified presets.
 INCIDENTS = {
-    "A": {"lat": 35.1, "lon": 129.3, "cache_index": 13, "label": "해운대 남동쪽 약 14 km", "verified": True},
-    "B": {"lat": 35.0, "lon": 129.2, "cache_index": 7, "label": "오륙도 남남동쪽 약 12 km", "verified": False},
-    "C": {"lat": 35.2, "lon": 129.3, "cache_index": 18, "label": "기장 남동쪽 약 9 km", "verified": False},
+    "A": {"lat": 35.1, "lon": 129.3, "cache_index": 13, "label": "해운대 남동쪽 약 14 km", "verified": True, "offset_min": 0},
+    "B": {"lat": 35.0, "lon": 129.2, "cache_index": 7, "label": "오륙도 남남동쪽 약 12 km", "verified": False, "offset_min": 80},
+    "C": {"lat": 35.2, "lon": 129.3, "cache_index": 18, "label": "기장 남동쪽 약 9 km", "verified": False, "offset_min": 150},
 }
 SUPPORTED_ALPHA = (0.0, 0.01, 0.03)
 
@@ -39,6 +39,7 @@ class Scenario:
     alpha: float
     changed: str
     required: bool = True
+    earliest_shift_min: int = 0
 
     def echo(self) -> dict:
         d = asdict(self)
@@ -53,6 +54,8 @@ SCENARIOS = {
     "S2": Scenario("S2", "투입 ~12:30", 250, datetime(2026, 10, 18, 12, 30, tzinfo=KST), 0.0, "latest_release"),
     "S3": Scenario("S3", "바람 계수 0.01", 250, LATEST, 0.01, "alpha", required=False),
     "S4": Scenario("S4", "바람 계수 0.03", 250, LATEST, 0.03, "alpha", required=False),
+    # demo addition outside the frozen criteria: fell up to 15 minutes earlier
+    "S5": Scenario("S5", "15분 일찍", 250, LATEST, 0.0, "earliest_release", required=False, earliest_shift_min=-15),
 }
 
 

@@ -29,7 +29,7 @@ def summarise(results: list[dict]) -> dict:
     ok, why = configured()
     if not ok:
         return {"status": "NOT_CONFIGURED", "reason": why}
-    names = {"S0": "신고 시점", "S1": "신고 기준 1 km 반경", "S2": "늦게 빠진 경우 (12:30)"}
+    names = {"S5": "15분 일찍 빠졌다면", "S0": "신고 시각", "S2": "15분 늦게 빠졌다면", "S1": "신고 위치 1 km 반경"}
     facts = [{"scenario": names.get(r.get("scenario", {}).get("id"), r.get("scenario", {}).get("id")),
               "evaluations": [{"at": e["at"], "top_cell_fraction": e["top_cell_fraction"],
                                "unresolved_fraction": e["unresolved_fraction"]} for e in r.get("evaluations", [])]}

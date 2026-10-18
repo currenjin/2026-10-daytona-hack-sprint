@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-const COLORS = { S0: 0x26e0c6, S1: 0xe9f3f2, S2: 0x7b74ff };
-const CSS_COLORS = { S0: '#26e0c6', S1: '#e9f3f2', S2: '#7b74ff' };
-const LABELS = { S0: '신고 시점', S1: '신고 기준 1 km 반경', S2: '늦게 빠진 경우 (12:30)' };
+const SIDS = ['S5', 'S0', 'S2', 'S1'];
+const COLORS = { S0: 0x26e0c6, S1: 0xe9f3f2, S2: 0x7b74ff, S5: 0xff7eb6 };
+const CSS_COLORS = { S0: '#26e0c6', S1: '#e9f3f2', S2: '#7b74ff', S5: '#ff7eb6' };
+const LABELS = { S5: '15분 일찍 빠졌다면', S0: '신고 시각', S2: '15분 늦게 빠졌다면', S1: '신고 위치 1 km 반경' };
 const R = 6371000, LAT0 = 35.1, LON0 = 129.3, COS = Math.cos(LAT0 * Math.PI / 180);
 const toX = lon => (lon - LON0) * Math.PI / 180 * R * COS / 1000;   // km east
 const toZ = lat => -(lat - LAT0) * Math.PI / 180 * R / 1000;        // km, -north
@@ -108,22 +109,22 @@ function dotTexture() {
 }
 const tex = dotTexture();
 const clouds = {};
-for (const sid of ['S0', 'S1', 'S2']) {
+for (const sid of SIDS) {
   const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(2000 * 3), 3));
   const pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: COLORS[sid], size: sid === 'S1' ? 0.3 : 0.34, map: tex, transparent: true, depthWrite: false, blending: THREE.NormalBlending, opacity: sid === 'S1' ? 0.35 : 0.8 }));
   pts.visible = false; pts.frustumCulled = false; scene.add(pts); clouds[sid] = pts;
 }
 
-const exitGeo = new THREE.BufferGeometry(); exitGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6000 * 3), 3));
+const exitGeo = new THREE.BufferGeometry(); exitGeo.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(8000 * 3), 3));
 const exits = new THREE.Points(exitGeo, new THREE.PointsMaterial({ color: 0xf2b84b, size: 0.32, map: tex, transparent: true, opacity: 0.85, depthWrite: false }));
 exits.frustumCulled = false; scene.add(exits);
 
 // top 1 km cell per scenario, centroid trails, place labels
 const cellBoxes = {}, trails = {}, centroids = {};
-for (const sid of ['S0', 'S1', 'S2']) {
+for (const sid of SIDS) {
   const sq = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints([[0, 0], [1, 0], [1, 1], [0, 1]].map(([a, b]) => new THREE.Vector3(a, 0, -b))),
     new THREE.LineBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 1 }));
-  sq.position.y = 0.08 + { S0: 0.02, S1: 0.01, S2: 0.03 }[sid]; sq.visible = false; scene.add(sq); cellBoxes[sid] = sq;
+  sq.position.y = 0.08 + { S0: 0.02, S1: 0.01, S2: 0.03, S5: 0.04 }[sid]; sq.visible = false; scene.add(sq); cellBoxes[sid] = sq;
   const fill = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: COLORS[sid], transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide }));
   fill.rotation.x = -Math.PI / 2; fill.position.set(0.5, -0.02, -0.5); sq.add(fill);
   const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(37 * 3), 3));
@@ -156,7 +157,7 @@ function placeLabels() {
   });
 }
 function applyFocus() {
-  for (const sid of ['S0', 'S1', 'S2']) {
+  for (const sid of SIDS) {
     const on = !state.focus || state.focus === sid;
     clouds[sid].material.opacity = on ? (sid === 'S1' ? 0.45 : 0.85) : 0.06;
     cellBoxes[sid].material.opacity = on ? 1 : 0.15; cellBoxes[sid].children[0].material.opacity = on ? 0.16 : 0.02;
@@ -164,7 +165,7 @@ function applyFocus() {
   }
 }
 function updateCells() {
-  for (const sid of ['S0', 'S1', 'S2']) {
+  for (const sid of SIDS) {
     const e = state.results[sid]?.evaluations?.[state.evalIdx];
     const box = cellBoxes[sid];
     if (!e || !e.top_cell || e.state_counts.ACTIVE === 0) { box.visible = false; continue; }
@@ -182,7 +183,7 @@ for (let i = 0; i < HEAT_N; i++) {
 }
 function updateHeat(fi) {
   const counts = new Map(); let total = 0;
-  for (const sid of ['S0', 'S1', 'S2']) {
+  for (const sid of SIDS) {
     const r = state.results[sid]; if (!r?.frames) continue;
     if (state.focus && state.focus !== sid) continue;
     const F = r.frames[fi];
@@ -220,19 +221,21 @@ function setFrame(f) {
     pts.geometry.attributes.position.needsUpdate = true; pts.visible = true;
   }
   const ea = exitGeo.attributes.position.array; let n = 0;
-  for (const sid of ['S0', 'S1', 'S2']) {
+  for (const sid of SIDS) {
     const r = state.results[sid]; if (!r || !r.frames) continue;
     const F = r.frames[Math.round(f)];
     for (let k = 0; k < 2000; k++) if (F.s[k] === 'O') { ea[n * 3] = F.xy[2 * k] / 1000; ea[n * 3 + 1] = 0.05; ea[n * 3 + 2] = -F.xy[2 * k + 1] / 1000; n++; }
   }
-  for (let k = n; k < 6000; k++) ea[k * 3 + 1] = -50;
+  for (let k = n; k < 8000; k++) ea[k * 3 + 1] = -50;
   exitGeo.attributes.position.needsUpdate = true;
-  for (const sid of ['S0', 'S1', 'S2']) {
+  for (const sid of SIDS) {
     const tl = trails[sid]; tl.visible = !!centroids[sid];
     if (tl.visible) tl.geometry.setDrawRange(0, Math.floor(f) + 1);
   }
   updateHeat(Math.round(f));
-  const mins = Math.round(f * 10), hh = 12 + Math.floor(mins / 60), mm = mins % 60;
+  const o = Object.values(state.results).find(r => r.frame_origin)?.frame_origin;
+  const base = o ? (+o.slice(11, 13)) * 60 + (+o.slice(14, 16)) : 720;
+  const mins = base + Math.round(f * 10), hh = Math.floor(mins / 60), mm = mins % 60;
   $('#clock').textContent = `${hh}:${String(mm).padStart(2, '0')}`;
   $('#scrub').value = Math.round(f);
 }
@@ -255,7 +258,7 @@ const follow = new THREE.Vector3(2.2, 0, -2.2), _d = new THREE.Vector3();
 let camMode = 'follow';
 function followTarget(f) {
   let sx = 0, sz = 0, n = 0;
-  for (const sid of ['S0', 'S1', 'S2']) {
+  for (const sid of SIDS) {
     const r = state.results[sid]; if (!r?.frames) continue;
     if (state.focus && state.focus !== sid) continue;
     const F = r.frames[Math.round(f)];
@@ -321,14 +324,15 @@ const cellCenter = key => {
   return `${lat.toFixed(4)}° N, ${lon.toFixed(4)}° E`;
 };
 function shareText() {
-  const at = ['13:00', '15:00', '18:00'], L = [];
+  const evs0 = Object.values(state.results).find(r => r.evaluations)?.evaluations || [];
+  const at = evs0.map(e => e.at.slice(11, 16)), L = [];
   L.push('[Golden Sea 상황 공유 · 시연용 가상 사고]');
   const rr = REPORTS.find(x => x.inc === state.incident);
   L.push(`신고 ${rr.when} · ${rr.what} · ${rr.pos} (${rr.ref}) · ${rr.time} 추정`);
   L.push('');
   for (let ei = 0; ei < 3; ei++) {
     L.push(`${at[ei]} KST 표류 경로 경우의 수가 가장 많이 모인 1 km 칸`);
-    for (const sid of ['S0', 'S1', 'S2']) {
+    for (const sid of SIDS) {
       const e = state.results[sid]?.evaluations?.[ei];
       if (!e) { L.push(`  ${LABELS[sid]}: 결과 없음`); continue; }
       L.push(e.state_counts.ACTIVE === 0 ? `  ${LABELS[sid]}: 모든 경로 해역 밖 · 미확인` : `  ${LABELS[sid]}: ${cellCenter(e.top_cell)} 중심 · ${(e.top_cell_fraction * 100).toFixed(1)}%`);
@@ -346,11 +350,13 @@ $('#sharecopy').onclick = async () => { try { await navigator.clipboard.writeTex
 const pct = v => v == null ? '—' : `${(v * 100).toFixed(1)}%`;
 
 function renderCard() {
-  const evAt = ['13:00', '15:00', '18:00'][state.evalIdx];
+  const evs = Object.values(state.results).find(r => r.evaluations)?.evaluations;
+  const evAt = evs ? evs[state.evalIdx].at.slice(11, 16) : ['13:00', '15:00', '18:00'][state.evalIdx];
+  if (evs) document.querySelectorAll('#evalseg button').forEach((b, i) => b.textContent = evs[i].at.slice(11, 16));
   const any = Object.values(state.results).find(r => r.evaluations);
   const where = any ? (any.executor === 'daytona' ? 'Daytona sandbox 실행' : '로컬 실행 (스폰서 실행 아님)') : '';
   $('#cardsub').textContent = any ? `${evAt} KST` : '';
-  $('#kpis').innerHTML = ['S0', 'S1', 'S2'].map(sid => {
+  $('#kpis').innerHTML = SIDS.map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx];
     const allOut = e && e.state_counts.ACTIVE === 0;
     const val = e ? (allOut ? '—' : pct(e.top_cell_fraction)) : '—';
@@ -361,7 +367,7 @@ function renderCard() {
     const cls = state.focus === sid ? ' on' : (state.focus ? ' dim' : '');
     return `<div class="k${cls}" data-sid="${sid}" role="button" tabindex="0" title="이 시나리오만 지도에서 보기"><span class="lab"><i style="background:${CSS_COLORS[sid]}"></i>${LABELS[sid]}</span><b>${r && !r.evaluations ? '—' : val}</b>${cnt}${st}</div>`;
   }).join('');
-  const ev = ['S0', 'S1', 'S2'].map(sid => state.results[sid]?.evaluations?.[state.evalIdx]);
+  const ev = SIDS.map(sid => state.results[sid]?.evaluations?.[state.evalIdx]);
   let ins = '';
   if (ev.every(Boolean)) {
     if (ev.every(e => e.state_counts.ACTIVE === 0)) ins = '모든 입자가 해역 밖 · 미확인으로 남깁니다';
@@ -375,11 +381,11 @@ function renderCard() {
     state.focus = state.focus === k.dataset.sid ? null : k.dataset.sid; applyFocus(); renderCard(); updateHeat(Math.round(state.frame));
   });
   updateCells();
-  $('#unres').textContent = ['S0', 'S1', 'S2'].map(sid => {
+  $('#unres').textContent = SIDS.map(sid => {
     const e = state.results[sid]?.evaluations?.[state.evalIdx];
     return e ? `${LABELS[sid]} ${e.unresolved_count}/${e.n}` : `${LABELS[sid]} —`;
   }).join(' · ');
-  const rows = ['S0', 'S1', 'S2'].map(sid => {
+  const rows = SIDS.map(sid => {
     const r = state.results[sid]; const e = r?.evaluations?.[state.evalIdx]; const sc = r?.scenario || {};
     const n = e?.n || 2000, sc_ = e?.state_counts || {};
     return `<tr><td>${LABELS[sid]}</td><td>${sc.changed ?? '—'}</td><td>${e ? `${e.top_cell} · ${pct(e.top_cell_fraction)}` : '—'}</td><td>${e ? pct((sc_.OUT_OF_DOMAIN || 0) / n) : '—'}</td><td>${e ? pct((sc_.DATA_MISSING || 0) / n) : '—'}</td><td>${e ? pct((sc_.UNRELEASED || 0) / n) : '—'}</td><td>미검증</td></tr>`;
@@ -389,7 +395,7 @@ function renderCard() {
 
 function renderRows(batch) {
   for (const [sid, it] of Object.entries(batch?.items || {})) state.rows[sid] = { it, r: batch.results?.[sid] };
-  $('#runrows').innerHTML = ['S0', 'S1', 'S2'].map(sid => {
+  $('#runrows').innerHTML = SIDS.map(sid => {
     const it = state.rows[sid]?.it; const r = state.rows[sid]?.r;
     let ph = '대기', cls = '';
     if (it) {
@@ -422,10 +428,10 @@ function banner(text, kind) {
   b.hidden = false; b.className = 'banner' + (kind === 'warn' ? ' warn' : ''); b.textContent = text;
 }
 
-async function run(scenarios = ['S0', 'S1', 'S2']) {
+async function run(scenarios = SIDS) {
   $('#runbtn').disabled = true; $('#runpanel').classList.add('busy');
   $('#intro').classList.add('running');
-  $('#intro-run').textContent = state.executor === 'daytona' ? 'Daytona sandbox 3개 동시 계산 중…' : '로컬 계산 중… (스폰서 실행 아님)';
+  $('#intro-run').textContent = '추정 위치 계산 중…';
   const res = await fetch('/api/run', { method: 'POST', body: JSON.stringify({ scenarios, executor: state.executor, source: state.source, incident: state.incident }) });
   const j = await res.json();
   if (!j.batch_id) { $('#runpanel').classList.remove('busy'); $('#intro').classList.remove('running'); banner(`${j.status === 'INPUT_ERROR' ? '입력 오류 · 새 계산을 만들지 않았습니다' : j.status}: ${j.error}`); $('#runbtn').disabled = false; return; }
@@ -480,7 +486,7 @@ function setIncident(id) {
   PLACES[4][1] = c.lat; PLACES[4][2] = c.lon + 0.0075;
   for (const o of [...Object.values(clouds), exits, heat, ...Object.values(trails)]) o.position.set(off.x, 0, off.z);
   state.results = {}; state.rows = {}; state.focus = null;
-  for (const sid of ['S0', 'S1', 'S2']) { cellBoxes[sid].visible = false; delete centroids[sid]; }
+  for (const sid of SIDS) { cellBoxes[sid].visible = false; delete centroids[sid]; }
   follow.set(off.x + 1.5, 0, off.z - 1.5);
   renderRows(null); renderCard(); setFrame(0);
 }

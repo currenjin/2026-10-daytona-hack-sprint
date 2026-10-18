@@ -12,7 +12,7 @@ import math
 import json
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .engine import Box, Particle, Projection, bin_counts, simulate_frames
@@ -34,9 +34,11 @@ def load_latent(contracts: Path) -> list[list[float]]:
     return json.loads(raw)["particles"]
 
 
-def make_particles(latent, radius_m: float, latest: datetime) -> list[Particle]:
-    span = (latest - EARLIEST).total_seconds()
-    return [Particle(radius_m * ue, radius_m * un, span * ru) for ue, un, ru in latent]
+def make_particles(latent, radius_m: float, latest: datetime, start: datetime = EARLIEST,
+                   first: datetime | None = None) -> list[Particle]:
+    first = first or start
+    base, span = (first - start).total_seconds(), (latest - first).total_seconds()
+    return [Particle(radius_m * ue, radius_m * un, base + span * ru) for ue, un, ru in latent]
 
 
 def domain_box(proj: Projection) -> Box:
@@ -50,6 +52,10 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
     sc = SCENARIOS[scenario_id]
     inc = INCIDENTS[incident]
     lat0, lon0 = inc["lat"], inc["lon"]
+    # each report has its own time window; the frozen incident A keeps 12:00
+    shift = timedelta(minutes=inc.get("offset_min", 0))
+    start, latest, eval_end = EARLIEST + shift, sc.latest_release + shift, EVAL_END + shift
+    eval_times = [t + shift for t in EVAL_TIMES]
     run = {
         "run_id": uuid.uuid4().hex[:12],
         "scenario": sc.echo(),
@@ -58,10 +64,10 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
         "started_at": datetime.now(timezone.utc).isoformat(),
         "incident": {"id": incident, "lat": lat0, "lon": lon0, "label": inc["label"],
                      "in_frozen_criteria": inc["verified"],
-                     "earliest_release": EARLIEST.isoformat(), "latest_release": sc.latest_release.isoformat()},
+                     "earliest_release": start.isoformat(), "latest_release": latest.isoformat()},
         "quality_flags": ["COASTLINE_UNVERIFIED", "SURFACE_CURRENT_UNVERIFIED"]
                          + (["WIND_ADAPTER_UNVERIFIED"] if sc.alpha else [])
-                         + ([] if inc["verified"] else ["PRESET_NOT_IN_FROZEN_CRITERIA"]),
+                         + ([] if inc["verified"] and sc.id in ("S0", "S1", "S2") else ["PRESET_NOT_IN_FROZEN_CRITERIA"]),
         "stranding_fraction": None,
         "disclosures": DISCLOSURES,
         "units": UNITS,
@@ -71,7 +77,7 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
     }
     t0 = time.perf_counter()
     try:
-        validate(lat0, lon0, sc.radius_m, EARLIEST, sc.latest_release, EVAL_END, sc.alpha)
+        validate(lat0, lon0, sc.radius_m, start, latest, eval_end, sc.alpha)
     except InputError as e:
         return {**run, "status": "INPUT_ERROR", "error": str(e)}
     if source == "synthetic":
@@ -93,14 +99,16 @@ def run_scenario(scenario_id: str, cache_dir: Path, contracts: Path, executor: s
         return {**run, "status": "DATA_ERROR", "error": str(e)}
     t_load = time.perf_counter()
 
-    forcing = build_forcing(marine, wind, EPOCH)
+    epoch = start.astimezone(timezone.utc)
+    forcing = build_forcing(marine, wind, epoch)
     try:
-        validate_support(EARLIEST, EVAL_END, forcing.support, EPOCH)
+        validate_support(start, eval_end, forcing.support, epoch)
     except InputError as e:
         return {**run, "status": "INPUT_ERROR", "error": str(e)}
     proj = Projection(lat0, lon0)
     dom = domain_box(proj)
-    return {**run, **simulate(latent, sc, forcing, dom, proj, t0, t_load), "status": "OK",
+    return {**run, **simulate(latent, sc, forcing, dom, proj, t0, t_load, start, latest, eval_times, eval_end),
+            "status": "OK",
             "provenance": {"current": prov_m, "wind": prov_w}}
 
 
@@ -128,11 +136,13 @@ def synthetic_run(sc, contracts: Path, t0) -> dict:
     return simulate(latent, sc, Forcing(segs), domain_box(proj), proj, t0, t_load)
 
 
-def simulate(latent, sc, forcing, dom, proj, t0, t_load) -> dict:
-    eval_s = {round((t - EARLIEST).total_seconds()): t for t in EVAL_TIMES}
-    horizon = (EVAL_END - EARLIEST).total_seconds()
+def simulate(latent, sc, forcing, dom, proj, t0, t_load, start=EARLIEST, latest=None, eval_times=EVAL_TIMES,
+             eval_end=EVAL_END) -> dict:
+    eval_s = {round((t - start).total_seconds()): t for t in eval_times}
+    horizon = (eval_end - start).total_seconds()
     frame_times = [float(t) for t in range(0, int(horizon) + 1, FRAME_STEP_S)]
-    ps = make_particles(latent, sc.radius_m, sc.latest_release)
+    first = start + timedelta(minutes=getattr(sc, "earliest_shift_min", 0))
+    ps = make_particles(latent, sc.radius_m, latest or sc.latest_release, start, first)
     frames, evaluations = [], []
     for t, snap in simulate_frames(ps, forcing, sc.alpha, frame_times, domain=dom):
         frames.append({"t": t, "xy": [v for x, y, _ in snap for v in (cell_round(x), cell_round(y))],
@@ -145,7 +155,7 @@ def simulate(latent, sc, forcing, dom, proj, t0, t_load) -> dict:
     t_calc = time.perf_counter()
     return {
         "frame_step_s": FRAME_STEP_S,
-        "frame_origin": EARLIEST.isoformat(),
+        "frame_origin": start.isoformat(),
         "frame_units": "metres east/north of incident (local EQC); state letters A,U,D,O,S",
         "frames": frames,
         "evaluations": evaluations,
