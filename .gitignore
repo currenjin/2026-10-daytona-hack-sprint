@@ -9,3 +9,4 @@ scripts/verify-evidence.json
 test/patch-formatting-evidence.json
 private-inputs/
 __pycache__/
+.venv/
